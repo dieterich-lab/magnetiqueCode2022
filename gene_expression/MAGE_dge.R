@@ -1,3 +1,4 @@
+#Switch to working directory
 setwd("/Volumes/prj/MAGE/Christoph/stringtie")
 #read stringtie gene expression data
 
@@ -24,9 +25,6 @@ gene_counts <- gene_counts[, ins]
 #library(edgeR)
 y <- DGEList(counts=gene_counts)
 
-#time=c("4","4","4","4","4","4","12","12","12","12","12","12","12","12")
-#genotype=c("wt","wt","wt","het_ko","het_ko","het_ko","wt","wt","wt","het_ko","het_ko","het_ko","het_ko","het_ko")
-
 design <- model.matrix(~ meta$etiology + meta$race + meta$sex + meta$Age + meta$DuplicationRate)
 design = design[,-c(5,7,9)]
 
@@ -36,17 +34,16 @@ y <- y[keep, , keep.lib.sizes=FALSE]
 
 y <- calcNormFactors(y)
 
-#y <- estimateDisp(y)
-                                        #Zwichenspeichern
 
 y <- estimateGLMCommonDisp(y, design, verbose=TRUE)
-#y <- estimateGLMTrendedDisp(y, design)
 y <- estimateGLMTagwiseDisp(y, design)
 
-                                        #TODO: save y object
+#Todo save edgeR y object
 
 fit <- glmQLFit(y,design,robust=TRUE)
-                                        #plotQLDisp(fit)
+
+                                        #Collect different contrast comparisons.
+
 QlfList<-list();
 
 QlfList[["DCMvsNormal"]] <- glmQLFTest(fit,contrast=c(0,1,0,-1,0,0,0,0)) #DCM vs Normal
@@ -59,6 +56,7 @@ mart=useMart(biomart="ENSEMBL_MART_ENSEMBL", dataset="hsapiens_gene_ensembl", ho
 resMArt=getBM(attributes=c("ensembl_gene_id","hgnc_symbol","description"),mart=mart)
 
 #also use code for diseases..
+#Open Targets database genetic_association_mendelian_somatic_mutation_combined.bed Nov 25 2020
 
 Disease=read.delim("/Volumes//prj/MAGE/database/gene2disease.txt",header=F,as.is=T)
 colnames(Disease)=c("ID","GeneSymbol","Disease")
@@ -66,15 +64,15 @@ tmp=tapply(Disease$Disease,Disease$ID,paste,collapse=",")
 Disease=data.frame(ID=names(tmp),Disease=tmp)
 
 
-#RBP - redo with Netze stuiff
+#RBP - from Hentze paper
 library(openxlsx)
 
 rbps=readWorkbook("/Volumes//prj/MAGE/database/TableS1.xlsx",2)
 rbps=as.character(subset(rbps$ID,rbps$found_in_at_least_2_Hs_RIC_studies=="YES" | rbps$knownRBPs=="YES" | rbps$"3470_human_RBPs"=="YES"))
 rbps=data.frame(ID=rbps,RBP=rep(1,length(rbps)))
-#Mmmh ???
-    
-tfs=read.delim("~/Downloads/annotated_human_TFs_slim.txt",header=F,as.is=T)
+
+#Some TF paper    
+tfs=read.delim("/Volumes//prj/MAGE/database/annotated_human_TFs_slim.txt",header=F,as.is=T)
 tfs=unique(tfs[,2])
 tfs=data.frame(ID=tfs,TF=rep(1,length(tfs)))
 
@@ -102,24 +100,4 @@ for(k in names(QlfList))
 }
 
 saveWorkbook(wb, "MAGE_DGE_Nov2020.xlsx", overwrite = TRUE)
-
 exit(0);
-
-                                        #RBPs
-
-rbpsDGE=subset(DfQlf,DfQlf$hgnc_symbol %in% rbps);
-
-#TFs
-
-todo=as.character(DfQlf[grep("MEF2C-AS1",DfQlf$hgnc_symbol),1])
-
-for(goI in todo)
-{
-idx=grep(goI,as.character(DfQlf[,1]))
-countTab=cpm(y)[goI,]
-                                        #cool.. but should remove outliers
-#pdf(paste0("/Volumes//prj/MAGE/Christoph/plots/",DfQlf[idx,"hgnc_symbol"],".pdf"))
-boxplot(list(DCM=countTab[which(design[,2]==1)],HCM=countTab[which(design[,3]==1)],Normals=countTab[which(design[,4]==1)]),ylab="cpm",xlab="Etiology",main=paste0("Gene: ",DfQlf[idx,"hgnc_symbol"]," FDR: ",DfQlf[idx,"FDR"]))
-#dev.off()
-}
-
