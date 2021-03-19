@@ -35,13 +35,15 @@ library(ComplexHeatmap)
 library(VennDiagram)
 library(tibble)
 
-source("src/plotDistributions.R")
-source("src/createRegulonList.R")
-source("src/support_functions.R")
+# source("~/Documents/src/limmaWrapper.R")
+# source("~/Documents/src/pianoWrapper.R")
+source("~/Documents/src/plotDistributions.R")
+source("~/Documents/src/createRegulonList.R")
+source("~/Documents/src/support_functions.R")
 
-MAGE_metadata <- read.csv("Data/MAGE_metadata.txt")
+MAGE_metadata <- read.csv("~/Desktop/MAGE-Project/Data/MAGE_metadata.txt")
 
-gene_count_matrix <- read_csv("Data/gene_count_matrix.csv")
+gene_count_matrix <- read_csv("~/Desktop/MAGE-Project/Data/gene_count_matrix.csv")
 rNames <- gene_count_matrix$gene_id
 gene_count_matrix <- gene_count_matrix[, 2:ncol(gene_count_matrix)]
 
@@ -50,7 +52,7 @@ rownames(counts) <- rNames
 colnames(counts) <- gsub(pattern = "_stringtieRef", replacement = "", x = colnames(counts), fixed = TRUE)
 
 ensgID <- rownames(counts)
-MappedID_MAGE_Stringtie <- read.delim("Data/MappedID_MAGE_Stringtie.txt", header=FALSE)
+MappedID_MAGE_Stringtie <- read.delim("~/Desktop/MAGE-Project/Data/MappedID_MAGE_Stringtie.txt", header=FALSE)
 
 counts <- as.data.frame(counts)
 
@@ -118,9 +120,36 @@ targets <- targets[-idx2rem, ]
 counts <- counts[, -idx2rem]
 
 #
-DCM_vs_Healthy <- read_excel("Data/DCM_edger.xlsx")
-HCM_vs_Healthy <- read_excel("Data/HCM_edger.xlsx")
-DCM_vs_HCM <- read_excel("Data/DCM_HCM_edger.xlsx")
+DCM_vs_Healthy <- read_excel("output/DCM_vs_Healthy.xlsx")
+HCM_vs_Healthy <- read_excel("output/HCM_vs_Healthy.xlsx")
+DCM_vs_HCM <- read_excel("output/DCM_vs_HCM.xlsx")
+
+for(ii in 1:nrow(DCM_vs_Healthy)){
+  
+  idx <- which(MappedID_MAGE_Stringtie$V1==DCM_vs_Healthy$ID[ii])
+  if(length(idx)==1){
+    DCM_vs_Healthy$hgnc_symbol[ii] <- MappedID_MAGE_Stringtie$V2[idx]
+  }
+  
+}
+
+for(ii in 1:nrow(DCM_vs_HCM)){
+  
+  idx <- which(MappedID_MAGE_Stringtie$V1==DCM_vs_HCM$ID[ii])
+  if(length(idx)==1){
+    DCM_vs_HCM$hgnc_symbol[ii] <- MappedID_MAGE_Stringtie$V2[idx]
+  }
+  
+}
+
+for(ii in 1:nrow(HCM_vs_Healthy)){
+  
+  idx <- which(MappedID_MAGE_Stringtie$V1==HCM_vs_Healthy$ID[ii])
+  if(length(idx)==1){
+    HCM_vs_Healthy$hgnc_symbol[ii] <- MappedID_MAGE_Stringtie$V2[idx]
+  }
+  
+}
 
 ttopList <- list()
 ttopList[[length(ttopList)+1]] <- DCM_vs_Healthy
@@ -132,11 +161,12 @@ names(ttopList) <- c("DCM_vs_Healthy", "HCM_vs_Healthy", "DCM_vs_HCM")
 for(ii in 1:length(ttopList)){
   
   temp <- ttopList[[ii]]
+  temp$hgnc_symbol <- as.character(temp$hgnc_symbol)
   idx <- intersect(x = which(abs(temp$logFC)>2), y = which(temp$FDR<0.05))
   idx1 <- intersect(x = which(temp$logFC>2), y = which(temp$FDR<0.05))
   idx2 <- intersect(x = which(temp$logFC < -2), y = which(temp$FDR<0.05))
   pdf(file = paste0("output/volcano_", names(ttopList)[ii], ".pdf"), width = 12, height = 8)
-  EnhancedVolcano(toptable = temp, lab = temp$external_gene_name, x = "logFC", y = "FDR", pCutoff = 0.05, FCcutoff = 1,
+  EnhancedVolcano(toptable = temp, lab = temp$hgnc_symbol, x = "logFC", y = "FDR", pCutoff = 0.05, FCcutoff = 1,
                   pointSize = 3, title = "Volcano plot of differentially expressed genes",
                   subtitle = paste0(length(idx), " significantly enriched genes (pCutoff = 0.05, Log-FCcutoff = 2): ", length(idx1), " up & ", length(idx2), " down"))
   dev.off()
@@ -144,7 +174,7 @@ for(ii in 1:length(ttopList)){
   idx1 <- which(targets$condition==strsplit(x = names(ttopList)[ii], split = "_vs_", fixed = TRUE)[[1]][1])
   idx2 <- which(targets$condition==strsplit(x = names(ttopList)[ii], split = "_vs_", fixed = TRUE)[[1]][2])
   # top50 <- temp$ID[order(abs(temp$logFC), decreasing = TRUE)[1:50]]
-  top50 <- temp$GeneID[order(abs(temp$logFC), decreasing = TRUE)[1:50]]
+  top50 <- temp$hgnc_symbol[order(abs(temp$logFC), decreasing = TRUE)[1:50]]
   select <- which(rownames(data)%in%top50)
   mycol <- colorRamp2(c(-3,0,3), c("dodgerblue", "black", "yellow"))
   mm <- as.matrix(data)[select, c(idx1, idx2)]
@@ -159,7 +189,7 @@ for(ii in 1:length(ttopList)){
 sets <- list()
 for(ii in 1:length(ttopList)){
   temp <- ttopList[[ii]]
-  sets[[length(sets)+1]] <- temp$GeneID[order(abs(temp$logFC), decreasing = TRUE)[1:50]]
+  sets[[length(sets)+1]] <- as.character(temp$hgnc_symbol[order(abs(temp$logFC), decreasing = TRUE)[1:50]])
 }
 DCM_vs_Healthy <- sets[[1]]
 HCM_vs_Healthy <- sets[[2]]
@@ -210,7 +240,7 @@ for(ii in 1:length(ttopList)){
   
   temp <- ttopList[[ii]]
   stats <- temp$logFC
-  names(stats) <- temp$external_gene_name
+  names(stats) <- temp$hgnc_symbol
   
   fgseaRes <- fgseaSimple(pathways = exP, stats = stats, minSize = 1, maxSize = Inf, nperm = 10000)
   fgseaRes$leadingEdge <- as.character(fgseaRes$leadingEdge)
@@ -291,9 +321,12 @@ pheatmap(t(PathwayActivity_counts[idxOrder, ]),fontsize=14,
                          main = "PROGENy Samplewise Activities", angle_col = NULL,
                          treeheight_col = 0,  border_color = NA)
 
+ttList <- list()
 for(ii in 1:length(ttopList)){
   
-  ss <- strsplit(x = names(ttopList)[1], split = "_vs_")[[1]]
+  tt <- c()
+  
+  ss <- strsplit(x = names(ttopList)[ii], split = "_vs_")[[1]]
   
   progeny_sample <- PathwayActivity_counts
   
@@ -319,7 +352,11 @@ for(ii in 1:length(ttopList)){
         if(grepl(pattern = "Healthy", x = rownames(progeny_sample)[ll], fixed = TRUE)){
           bb[cnt, 2] <- "Healthy"
         } else{
-          bb[cnt, 2] <- strsplit(x = names(ttopList)[ii], split = "_", fixed = TRUE)[[1]][1]
+          if(grepl(pattern = "DCM", x = rownames(progeny_sample)[ll], fixed = TRUE)){
+            bb[cnt, 2] <- "DCM"
+          } else {
+            bb[cnt, 2] <- "HCM"
+          }
         }
 
         bb[cnt, 3] <- as.numeric(progeny_sample[ll, jj])
@@ -338,14 +375,31 @@ for(ii in 1:length(ttopList)){
       geom_boxplot(position=position_dodge(1))
     plot(pp)
     dev.off()
+    
+    px <- c("Androgen", "EGFR", "Estrogen", "Hypoxia",  "JAK-STAT", "MAPK", "NFkB", 
+            "p53", "PI3K", "TGFb", "TNFa", "Trail", "VEGF", "WNT")
+    
+    for(jj in 1:length(px)){
+      
+      act1 <- bb$Activity[intersect(x = which(bb$Pathway==px[jj]), y = which(bb$Condition==ss[1]))]
+      act2 <- bb$Activity[intersect(x = which(bb$Pathway==px[jj]), y = which(bb$Condition==ss[2]))]
+      
+      p <- t.test(x = act1, y = act2)
+      tt <- c(tt, p$p.value)
+      
+    }
+    
+    names(tt) <- px
+    ttList[[length(ttList)+1]] <- tt
   
 }
+names(ttList) <- names(ttopList)
 
-
+progenyDFList <- list()
 for(ii in 1:length(ttopList)){
   
   stats <- ttopList[[ii]]$logFC
-  names(stats) <- ttopList[[ii]]$external_gene_name
+  names(stats) <- ttopList[[ii]]$hgnc_symbol
   uID <- unique(names(stats))
   ss <- matrix(data = , nrow = length(uID), ncol = 1)
   rownames(ss) <- uID
@@ -363,6 +417,8 @@ for(ii in 1:length(ttopList)){
     rownames_to_column(var = "Pathway") %>%
     dplyr::arrange(NES) %>%
     dplyr::mutate(Pathway = factor(Pathway))
+  
+  progenyDFList[[length(progenyDFList)+1]] <- PathwayActivity_zscore_df
   
   pdf(file = paste0("output/progeny_differential_activities_", names(ttopList)[ii], ".pdf"), 
       width = 12, height = 5)
@@ -449,6 +505,46 @@ for(ii in 1:length(ttopList)){
   dev.off()
   
 }
+names(progenyDFList) <- names(ttopList)
+
+## volcano progeny
+temp <- matrix(data = , nrow = length(progenyDFList)*nrow(progenyDFList$DCM_vs_Healthy), ncol = 3)
+cnt <- 1
+for(ii in 1:length(progenyDFList)){
+  
+  currDF <- progenyDFList[[ii]]
+  currDF$Pathway <- as.character(currDF$Pathway)
+  currDF$NES <- as.numeric(as.character(currDF$NES))
+  currTT <- ttList[[ii]]
+  
+  currDF <- currDF[order(as.character(currDF$Pathway), decreasing = TRUE), ]
+  currTT <- currTT[order(names(currTT), decreasing = TRUE)]
+  
+  for(jj in 1:length(currTT)){
+    
+    temp[cnt, 1] <- paste0(names(currTT)[jj], "_", names(progenyDFList)[ii])
+    temp[cnt, 2] <- currDF$NES[jj]
+    temp[cnt, 3] <- as.numeric(currTT)[jj]
+    
+    cnt <- cnt + 1
+    
+  }
+  
+}
+temp <- as.data.frame(temp)
+colnames(temp) <- c("case", "nes", "pval")
+temp$nes <- as.numeric(temp$nes)
+temp$pval <- as.numeric(temp$pval)
+
+idx <- intersect(x = which(abs(temp$nes)>1), y = which(temp$pval<0.1))
+idx1 <- intersect(x = which(temp$nes>1), y = which(temp$pval<0.1))
+idx2 <- intersect(x = which(temp$nes < -1), y = which(temp$pval<0.1))
+pdf(file = paste0("output/progeny_deregulated_pathways.pdf"), width = 12, height = 8)
+EnhancedVolcano(toptable = temp, lab = temp$case, x = "nes", y = "pval", pCutoff = 0.1, FCcutoff = 1,
+                pointSize = 3, title = "Volcano plot of PROGENy scores",
+                subtitle = paste0(length(idx), " significantly regulated pathways (pCutoff = 0.1, NES = 1): ", length(idx1), " up & ", length(idx2), " down"), 
+                xlab = "NES", ylim = c(0, 5), labSize = 1.5)
+dev.off()
 
 ## DoRothEA analysis
 data(dorothea_hs, package = "dorothea")
@@ -459,7 +555,7 @@ tfList <- list()
 for(ii in 1:length(ttopList)){
   
   stats <- ttopList[[ii]]$logFC
-  names(stats) <- ttopList[[ii]]$external_gene_name
+  names(stats) <- ttopList[[ii]]$hgnc_symbol
   uID <- unique(names(stats))
   ss <- matrix(data = , nrow = length(uID), ncol = 1)
   rownames(ss) <- uID
