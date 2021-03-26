@@ -1,5 +1,5 @@
 #
-set.seed(1234)
+set.seed(66901)
 
 #
 dir.create("output")
@@ -120,36 +120,13 @@ targets <- targets[-idx2rem, ]
 counts <- counts[, -idx2rem]
 
 #
-DCM_vs_Healthy <- read_excel("output/DCM_vs_Healthy.xlsx")
-HCM_vs_Healthy <- read_excel("output/HCM_vs_Healthy.xlsx")
-DCM_vs_HCM <- read_excel("output/DCM_vs_HCM.xlsx")
+load(file = "DCM_vs_Healthy.RData")
+load(file = "HCM_vs_Healthy.RData")
+load(file = "DCM_vs_HCM.RData")
 
-for(ii in 1:nrow(DCM_vs_Healthy)){
-  
-  idx <- which(MappedID_MAGE_Stringtie$V1==DCM_vs_Healthy$ID[ii])
-  if(length(idx)==1){
-    DCM_vs_Healthy$hgnc_symbol[ii] <- MappedID_MAGE_Stringtie$V2[idx]
-  }
-  
-}
-
-for(ii in 1:nrow(DCM_vs_HCM)){
-  
-  idx <- which(MappedID_MAGE_Stringtie$V1==DCM_vs_HCM$ID[ii])
-  if(length(idx)==1){
-    DCM_vs_HCM$hgnc_symbol[ii] <- MappedID_MAGE_Stringtie$V2[idx]
-  }
-  
-}
-
-for(ii in 1:nrow(HCM_vs_Healthy)){
-  
-  idx <- which(MappedID_MAGE_Stringtie$V1==HCM_vs_Healthy$ID[ii])
-  if(length(idx)==1){
-    HCM_vs_Healthy$hgnc_symbol[ii] <- MappedID_MAGE_Stringtie$V2[idx]
-  }
-  
-}
+DCM_vs_Healthy <- DCM_vs_Healthy[-which(DCM_vs_Healthy$hgnc_symbol==""), ]
+HCM_vs_Healthy <- HCM_vs_Healthy[-which(HCM_vs_Healthy$hgnc_symbol==""), ]
+DCM_vs_HCM <- DCM_vs_HCM[-which(DCM_vs_HCM$hgnc_symbol==""), ]
 
 ttopList <- list()
 ttopList[[length(ttopList)+1]] <- DCM_vs_Healthy
@@ -159,37 +136,37 @@ ttopList[[length(ttopList)+1]] <- DCM_vs_HCM
 names(ttopList) <- c("DCM_vs_Healthy", "HCM_vs_Healthy", "DCM_vs_HCM")
 
 for(ii in 1:length(ttopList)){
-  
+
   temp <- ttopList[[ii]]
   temp$hgnc_symbol <- as.character(temp$hgnc_symbol)
-  idx <- intersect(x = which(abs(temp$logFC)>2), y = which(temp$FDR<0.05))
-  idx1 <- intersect(x = which(temp$logFC>2), y = which(temp$FDR<0.05))
-  idx2 <- intersect(x = which(temp$logFC < -2), y = which(temp$FDR<0.05))
+  idx <- intersect(x = which(abs(temp$logFC)>1), y = which(temp$PValue<0.05))
+  idx1 <- intersect(x = which(temp$logFC>1), y = which(temp$PValue<0.05))
+  idx2 <- intersect(x = which(temp$logFC < -1), y = which(temp$PValue<0.05))
   pdf(file = paste0("output/volcano_", names(ttopList)[ii], ".pdf"), width = 12, height = 8)
-  EnhancedVolcano(toptable = temp, lab = temp$hgnc_symbol, x = "logFC", y = "FDR", pCutoff = 0.05, FCcutoff = 1,
+  EnhancedVolcano(toptable = temp, lab = temp$hgnc_symbol, x = "logFC", y = "PValue", pCutoff = 0.05, FCcutoff = 1,
                   pointSize = 3, title = "Volcano plot of differentially expressed genes",
                   subtitle = paste0(length(idx), " significantly enriched genes (pCutoff = 0.05, Log-FCcutoff = 2): ", length(idx1), " up & ", length(idx2), " down"))
   dev.off()
-  
+
   idx1 <- which(targets$condition==strsplit(x = names(ttopList)[ii], split = "_vs_", fixed = TRUE)[[1]][1])
   idx2 <- which(targets$condition==strsplit(x = names(ttopList)[ii], split = "_vs_", fixed = TRUE)[[1]][2])
   # top50 <- temp$ID[order(abs(temp$logFC), decreasing = TRUE)[1:50]]
-  top50 <- temp$hgnc_symbol[order(abs(temp$logFC), decreasing = TRUE)[1:50]]
+  top50 <- temp$geneID[order(abs(temp$logFC), decreasing = TRUE)[1:50]]
   select <- which(rownames(data)%in%top50)
-  mycol <- colorRamp2(c(-3,0,3), c("dodgerblue", "black", "yellow"))
+  mycol <- colorRamp2(c(-2,0,2), c("dodgerblue", "black", "yellow"))
   mm <- as.matrix(data)[select, c(idx1, idx2)]
-  pdf(file = paste0("output/top50_expr_genes_scaled_", names(ttopList)[ii], ".pdf"), 
+  pdf(file = paste0("output/top50_expr_genes_scaled_", names(ttopList)[ii], ".pdf"),
       width = 60, height = 20)
   Heatmap(scale(mm), col=mycol, cluster_columns = FALSE, cluster_rows = TRUE,
           column_title = "Expression heatmap of top 50 regulated genes")
   dev.off()
-  
+
 }
 
 sets <- list()
 for(ii in 1:length(ttopList)){
   temp <- ttopList[[ii]]
-  sets[[length(sets)+1]] <- as.character(temp$hgnc_symbol[order(abs(temp$logFC), decreasing = TRUE)[1:50]])
+  sets[[length(sets)+1]] <- as.character(temp$hgnc_symbol[order(abs(temp$logFC), decreasing = TRUE)[1:100]])
 }
 DCM_vs_Healthy <- sets[[1]]
 HCM_vs_Healthy <- sets[[2]]
@@ -199,7 +176,7 @@ myCol <- brewer.pal(3, "Pastel2")
 venn.diagram(
   x = list(DCM_vs_Healthy, HCM_vs_Healthy, DCM_vs_HCM),
   category.names = c("DCM vs Healthy" , "HCM vs Healthy" , "DCM vs HCM"),
-  filename = 'output/venn_diagramm_top50_genes.png',
+  filename = 'output/venn_diagramm_top100_genes.png',
   output=TRUE,
   
   # Output features
@@ -239,10 +216,10 @@ sets <- list()
 for(ii in 1:length(ttopList)){
   
   temp <- ttopList[[ii]]
-  stats <- temp$logFC
+  stats <- temp$t_val
   names(stats) <- temp$hgnc_symbol
   
-  fgseaRes <- fgseaSimple(pathways = exP, stats = stats, minSize = 1, maxSize = Inf, nperm = 10000)
+  fgseaRes <- fgseaSimple(pathways = exP, stats = stats, minSize = 10, maxSize = Inf, nperm = 10000)
   fgseaRes$leadingEdge <- as.character(fgseaRes$leadingEdge)
   fgseaRes <- fgseaRes[order(fgseaRes$padj, decreasing = FALSE), ]
   write_excel_csv(x = fgseaRes[, 1:7], file = paste0("output/all_ontology_sets_", names(ttopList)[ii],  ".xls"), 
@@ -299,6 +276,8 @@ for(ii in 1:nrow(dd)){
   
 }
 
+save(dd, file = "output/normalized_data.RData")
+
 PathwayActivity_counts <- progeny(dd, scale=TRUE, organism="Human", top = 200)
 Activity_counts <- as.vector(PathwayActivity_counts)
 
@@ -321,6 +300,9 @@ pheatmap(t(PathwayActivity_counts[idxOrder, ]),fontsize=14,
                          main = "PROGENy Samplewise Activities", angle_col = NULL,
                          treeheight_col = 0,  border_color = NA)
 
+gmt <- GSA.read.gmt(filename = "~/Downloads/kegg_human.gmt")
+exP <- gmt$genesets
+names(exP) <- gmt$geneset.names
 ttList <- list()
 for(ii in 1:length(ttopList)){
   
@@ -396,9 +378,10 @@ for(ii in 1:length(ttopList)){
 names(ttList) <- names(ttopList)
 
 progenyDFList <- list()
+matrixList <- list()
 for(ii in 1:length(ttopList)){
   
-  stats <- ttopList[[ii]]$logFC
+  stats <- ttopList[[ii]]$t_val
   names(stats) <- ttopList[[ii]]$hgnc_symbol
   uID <- unique(names(stats))
   ss <- matrix(data = , nrow = length(uID), ncol = 1)
@@ -436,7 +419,7 @@ for(ii in 1:length(ttopList)){
     xlab("Pathways")
   dev.off()
   
-  prog_matrix <- getModel("Human", top=200) %>% 
+  prog_matrix <- getModel("Human", top=100) %>% 
     as.data.frame()  %>%
     tibble::rownames_to_column("GeneID")
   
@@ -444,62 +427,62 @@ for(ii in 1:length(ttopList)){
     as.data.frame() %>% 
     tibble::rownames_to_column("GeneID")
   
-  scat_plots <- progeny::progenyScatter(df = ss, 
-                                        weight_matrix = prog_matrix, 
-                                        statName = "t_values", verbose = FALSE)
-  
+  scat_plots <- progeny::progenyScatter(df = ss,
+                                        weight_matrix = prog_matrix,
+                                        statName = "t_val", verbose = FALSE)
+
   pdf(file = paste0("output/jak_stat_most_responsive_genes_", tolower(names(ttopList)[ii]), ".pdf"), width = 10, height = 10)
   plot(scat_plots[[1]]$`JAK-STAT`)
   dev.off()
-  
+
   pdf(file = paste0("output/hypoxia_most_responsive_genes_", tolower(names(ttopList)[ii]), ".pdf"), width = 10, height = 10)
   plot(scat_plots[[1]]$`Hypoxia`)
   dev.off()
-  
+
   pdf(file = paste0("output/egfr_most_responsive_genes_", tolower(names(ttopList)[ii]), ".pdf"), width = 10, height = 10)
   plot(scat_plots[[1]]$`EGFR`)
   dev.off()
-  
+
   pdf(file = paste0("output/androgen_most_responsive_genes_", tolower(names(ttopList)[ii]), ".pdf"), width = 10, height = 10)
   plot(scat_plots[[1]]$`Androgen`)
   dev.off()
-  
+
   pdf(file = paste0("output/estrogen_most_responsive_genes_", tolower(names(ttopList)[ii]), ".pdf"), width = 10, height = 10)
   plot(scat_plots[[1]]$`Estrogen`)
   dev.off()
-  
+
   pdf(file = paste0("output/tnfa_most_responsive_genes_", tolower(names(ttopList)[ii]), ".pdf"), width = 10, height = 10)
   plot(scat_plots[[1]]$`TNFa`)
   dev.off()
-  
+
   pdf(file = paste0("output/wnt_most_responsive_genes_", tolower(names(ttopList)[ii]), ".pdf"), width = 10, height = 10)
   plot(scat_plots[[1]]$`WNT`)
   dev.off()
-  
+
   pdf(file = paste0("output/trail_most_responsive_genes_", tolower(names(ttopList)[ii]), ".pdf"), width = 10, height = 10)
   plot(scat_plots[[1]]$`Trail`)
   dev.off()
-  
+
   pdf(file = paste0("output/tgfb_most_responsive_genes_", tolower(names(ttopList)[ii]), ".pdf"), width = 10, height = 10)
   plot(scat_plots[[1]]$`TGFb`)
   dev.off()
-  
+
   pdf(file = paste0("output/mapk_most_responsive_genes_", tolower(names(ttopList)[ii]), ".pdf"), width = 10, height = 10)
   plot(scat_plots[[1]]$`MAPK`)
   dev.off()
-  
+
   pdf(file = paste0("output/vegf_most_responsive_genes_", tolower(names(ttopList)[ii]), ".pdf"), width = 10, height = 10)
   plot(scat_plots[[1]]$`VEGF`)
   dev.off()
-  
+
   pdf(file = paste0("output/nfkb_most_responsive_genes_", tolower(names(ttopList)[ii]), ".pdf"), width = 10, height = 10)
   plot(scat_plots[[1]]$`NFkB`)
   dev.off()
-  
+
   pdf(file = paste0("output/p53_most_responsive_genes_", tolower(names(ttopList)[ii]), ".pdf"), width = 10, height = 10)
   plot(scat_plots[[1]]$`p53`)
   dev.off()
-  
+
   pdf(file = paste0("output/pi3k_most_responsive_genes_", tolower(names(ttopList)[ii]), ".pdf"), width = 10, height = 10)
   plot(scat_plots[[1]]$`PI3K`)
   dev.off()
@@ -543,7 +526,7 @@ pdf(file = paste0("output/progeny_deregulated_pathways.pdf"), width = 12, height
 EnhancedVolcano(toptable = temp, lab = temp$case, x = "nes", y = "pval", pCutoff = 0.1, FCcutoff = 1,
                 pointSize = 3, title = "Volcano plot of PROGENy scores",
                 subtitle = paste0(length(idx), " significantly regulated pathways (pCutoff = 0.1, NES = 1): ", length(idx1), " up & ", length(idx2), " down"), 
-                xlab = "NES", ylim = c(0, 5), labSize = 1.5)
+                xlab = "NES", ylim = c(0, 5), labSize = 3)
 dev.off()
 
 ## DoRothEA analysis
@@ -552,9 +535,15 @@ regulons <- dorothea_hs %>%
   dplyr::filter(confidence %in% c("A", "B","C"))
 
 tfList <- list()
+tfListAll <- list()
+ff <- paste0("output/top_tf_volcano/", names(ttopList))
+dir.create("output/top_tf_volcano")
+for(ii in 1:length(ff)){
+  dir.create(ff[ii])
+}
 for(ii in 1:length(ttopList)){
   
-  stats <- ttopList[[ii]]$logFC
+  stats <- ttopList[[ii]]$t_val
   names(stats) <- ttopList[[ii]]$hgnc_symbol
   uID <- unique(names(stats))
   ss <- matrix(data = , nrow = length(uID), ncol = 1)
@@ -615,6 +604,213 @@ for(ii in 1:length(ttopList)){
   
   tfList[[length(tfList)+1]] <- tf_activities_stat_top50
   
+  for(jj in 1:nrow(tf_activities_stat_top25)){
+    
+    temp <- ttopList[[ii]]
+    temp$logFC <- as.numeric(as.character(temp$logFC))
+    temp$PValue <- as.numeric(as.character(temp$PValue))
+    temp$hgnc_symbol <- as.character(temp$hgnc_symbol)
+    targets <- regulons$target[regulons$tf == tf_activities_stat_top25$GeneID[jj]]
+    pdf(file = paste0(ff[ii], "/", tf_activities_stat_top25$GeneID[jj], "_targets.pdf"), 
+        width = 7, height = 7)
+    pp <- volcano_nice(as.data.frame(temp[temp$hgnc_symbol %in% targets,]), 
+                       FCIndex = 1, pValIndex = 4, IDIndex = 6, nlabels = 20,
+                       label = TRUE, straight = FALSE)
+    plot(pp)
+    dev.off()
+  }
+  
 }
 names(tfList) <- names(ttopList)
 save(tfList, file = "output/tfList50.RData")
+
+## Enrichment over the Hallmark sets
+gmt <- GSA.read.gmt(filename = "~/Downloads/human_hallmark.gmt")
+exP <- gmt$genesets
+names(exP) <- gmt$geneset.names
+
+sets <- list()
+for(ii in 1:length(ttopList)){
+  
+  temp <- ttopList[[ii]]
+  stats <- temp$t_val
+  names(stats) <- temp$hgnc_symbol
+  
+  fgseaRes <- fgseaSimple(pathways = exP, stats = stats, minSize = 1, maxSize = Inf, nperm = 10000)
+  fgseaRes$leadingEdge <- as.character(fgseaRes$leadingEdge)
+  fgseaRes <- fgseaRes[order(fgseaRes$padj, decreasing = FALSE), ]
+  write_excel_csv(x = fgseaRes[, 1:7], file = paste0("output/all_hallmark_sets_", names(ttopList)[ii],  ".xls"), 
+                  col_names = TRUE, delim = "\t")
+  
+  # create a theme for dot plots, which can be reused
+  theme_dotplot <- theme_bw(14) +
+    theme(axis.text.y = element_text(size = rel(.7)),
+          axis.ticks.y = element_blank(),
+          axis.title.x = element_text(size = rel(.7)),
+          panel.grid.major.x = element_blank(),
+          panel.grid.major.y = element_line(size = 0.5),
+          panel.grid.minor.x = element_blank())
+  
+  ff <- fgseaRes[order(fgseaRes$padj, decreasing = FALSE), ]
+  # ff <- ff[intersect(x = which(ff$padj<=0.05), y = which(abs(ff$NES)>=2)), ]
+  ff <- ff[which(ff$padj<=0.05), ]
+  sets[[length(sets)+1]] <- ff$pathway
+  level_order <- ff$pathway
+  pdf(file = paste0("output/top_hallmark_sets_", names(ttopList)[ii],  ".pdf"), width = 12, height = 6)
+  pp <- ggplot(ff, aes(x = NES, y = factor(pathway, level_order))) + theme_dotplot
+  pp <- pp + geom_point(aes(colour = padj, size = NES)) + xlab(label = "Normalized Enrichment Scores") + ylab(label = "Genesets")
+  pp <- pp + ggtitle(paste0("Top Enriched Hallmark sets - ", names(ttopList)[ii], " (padj <= 0.05 && abs-NES>=2)"))
+  plot(pp)
+  dev.off()
+  
+}
+
+## Enrichment over the miRNA sets
+gmt <- GSA.read.gmt(filename = "~/Downloads/miRNA_human.gmt")
+exP <- gmt$genesets
+names(exP) <- gmt$geneset.names
+
+regulons <- matrix(data = , nrow = 1, ncol = 4)
+colnames(regulons) <- c("tf", "likelihood", "target", "mor")
+for(ii in 1:length(exP)){
+  
+  print(paste0("Progress -- ", ii, "/", length(exP)))
+  toBind <- matrix(data = , nrow = length(exP[[ii]]), ncol = 4)
+  toBind[, 1] <- names(exP)[ii]
+  toBind[, 2] <- 1
+  toBind[, 3] <- exP[[ii]]
+  toBind[, 4] <- 1
+  
+  colnames(toBind) <- c("tf", "likelihood", "target", "mor")
+  
+  regulons <- rbind(regulons, toBind)
+
+}
+regulons <- as.data.frame(regulons)
+
+regulons$likelihood <- as.numeric(regulons$likelihood)
+regulons$mor <- as.numeric(regulons$mor)
+
+regulons <- regulons[2:nrow(regulons), ]
+
+sets <- list()
+dir.create("output/miRNA")
+ff <- c()
+for(ii in 1:length(ttopList)){
+  ff <- c(ff, paste0("output/miRNA/", names(ttopList)[ii]))
+}
+for(ii in 1:length(ttopList)){
+  
+  dir.create(ff[ii])
+  temp <- ttopList[[ii]]
+  stats <- temp$logFC
+  names(stats) <- temp$hgnc_symbol
+  stats <- as.matrix(stats)
+  
+  tf_activities_stat <- dorothea::run_viper(stats, regulons,
+                                            options =  list(minsize = 5, eset.filter = FALSE,
+                                                            cores = 1, verbose = FALSE, nes = TRUE))
+  colnames(tf_activities_stat) <- "t"
+
+  tmp <- as.matrix(tf_activities_stat[order(abs(tf_activities_stat[, 1]), decreasing = TRUE), ])
+  tmp <- as.data.frame(tmp)
+  colnames(tmp) <- "t"
+  tmp$id <- rownames(tmp)
+  tmp <- tmp[, c(2, 1)]
+  tmp$t <- as.character(tmp$t)
+  write_excel_csv2(x = tmp,
+                   file = paste0("output/miRNA_activities_all_", names(ttopList)[ii], ".xls"),
+                   col_names = TRUE)
+
+  tf_activities_stat_top25 <- tf_activities_stat %>%
+    as.data.frame() %>%
+    rownames_to_column(var = "GeneID") %>%
+    dplyr::rename(NES = "t") %>%
+    dplyr::top_n(50, wt = abs(NES)) %>%
+    dplyr::arrange(NES) %>%
+    dplyr::mutate(GeneID = factor(GeneID))
+
+  pdf(file = paste0("output/top50_diff_miRNA_act_", names(ttopList)[ii], ".pdf"),
+      width = 16, height = 7)
+  ggplot(tf_activities_stat_top25,aes(x = reorder(GeneID, NES), y = NES)) +
+    geom_bar(aes(fill = NES), stat = "identity") +
+    scale_fill_gradient2(low = "darkblue", high = "indianred",
+                         mid = "whitesmoke", midpoint = 0) +
+    theme_minimal() +
+    theme(axis.title = element_text(face = "bold", size = 12),
+          axis.text.x =
+            element_text(angle = 45, hjust = 1, size =10, face= "bold"),
+          axis.text.y = element_text(size =10, face= "bold"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank()) +
+    xlab("micro RNA's")
+  dev.off()
+
+
+  tf_activities_stat_top50 <- tf_activities_stat %>%
+    as.data.frame() %>%
+    rownames_to_column(var = "GeneID") %>%
+    dplyr::rename(NES = "t") %>%
+    dplyr::top_n(50, wt = abs(NES)) %>%
+    dplyr::arrange(NES) %>%
+    dplyr::mutate(GeneID = factor(GeneID))
+  
+  sets[[length(sets)+1]] <- tf_activities_stat_top50
+  
+  for(jj in 1:nrow(tf_activities_stat_top25)){
+    
+    temp <- ttopList[[ii]]
+    temp$logFC <- as.numeric(as.character(temp$logFC))
+    temp$PValue <- as.numeric(as.character(temp$PValue))
+    temp$hgnc_symbol <- as.character(temp$hgnc_symbol)
+    targets <- regulons$target[regulons$tf == tf_activities_stat_top25$GeneID[jj]]
+    pdf(file = paste0(ff[ii], "/", tf_activities_stat_top25$GeneID[jj], "_targets.pdf"), 
+        width = 7, height = 7)
+    pp <- volcano_nice(as.data.frame(temp[temp$hgnc_symbol %in% targets,]), 
+                       FCIndex = 1, pValIndex = 4, IDIndex = 6, nlabels = 20,
+                       label = TRUE, straight = FALSE)
+    plot(pp)
+    dev.off()
+  }
+  
+  
+}
+names(sets) <- names(ttopList)
+# save(sets, file = "output/miRNA_top50_Sets.RData")
+DCM_vs_Healthy <- sets[[1]]$GeneID
+HCM_vs_Healthy <- sets[[2]]$GeneID
+DCM_vs_HCM <- sets[[3]]$GeneID
+
+myCol <- brewer.pal(3, "Pastel2")
+venn.diagram(
+  x = list(DCM_vs_Healthy, HCM_vs_Healthy, DCM_vs_HCM),
+  category.names = c("DCM vs Healthy" , "HCM vs Healthy" , "DCM vs HCM"),
+  filename = 'output/venn_diagramm_top50_miRNA.png',
+  output=TRUE,
+  
+  # Output features
+  imagetype="png" ,
+  height = 1000 , 
+  width = 1000 , 
+  resolution = 300,
+  compression = "lzw",
+  
+  # Circles
+  lwd = 2,
+  lty = 'blank',
+  fill = myCol,
+  
+  # Numbers
+  cex = .6,
+  fontface = "bold",
+  fontfamily = "sans",
+  
+  # Set names
+  cat.cex = 0.6,
+  cat.fontface = "bold",
+  cat.default.pos = "outer",
+  cat.pos = c(-27, 27, 135),
+  cat.dist = c(0.055, 0.055, 0.085),
+  cat.fontfamily = "sans",
+  rotation = 1
+)
