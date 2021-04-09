@@ -57,6 +57,9 @@ read_solution_cplex <- function(cplexSolutionFileName="results1.txt",
       
     }
     
+    save(sif1, file = paste0("sif1_", ii, ".RData"))
+    save(sif2, file = paste0("sif2_", ii, ".RData"))
+    
     sifAll1[[length(sifAll1)+1]] <- unique(sif1[-1, ])
     sifAll2[[length(sifAll2)+1]] <- unique(sif2[-1, ])
     

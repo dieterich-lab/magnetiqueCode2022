@@ -69,7 +69,7 @@ write_objective_function <- function(background.network = background.network,
   objective.function <- paste0(objective.function, obj)
   
   # Write third objective - size penalty factor
-  idx <- which(grepl(pattern = "interaction", x = variables$var_exp, fixed = TRUE))
+  idx <- which(grepl(pattern = "reaction", x = variables$var_exp, fixed = TRUE))
   obj <- paste0(" + ", lambda2, " ", variables$var[idx])
   obj <- paste0(obj, collapse = "")
   objective.function <- paste0(objective.function, obj)

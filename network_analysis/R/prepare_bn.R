@@ -108,60 +108,60 @@ prepare_bn <- function(background.network = background.network,
                                                background.network = background.network, 
                                                map.table = map.table)
   
-  ppi <- unique(background.network[, c("gene_source", "gene_target" )])
-  targets <- input.scores$id[which(input.scores$id%in%unique(c(ppi$gene_source, ppi$gene_target)))]
-  gg <- graph_from_data_frame(d = ppi, directed = TRUE)
-  adj <- get.adjacency(graph = gg)
-  ppiRed <- matrix(data = , nrow = 1, ncol = 2)
-  for(ii in 1:length(input.node)){
-    
-    for(jj in 1:length(targets)){
-      
-      sP <- get.all.shortest.paths(graph = gg, 
-                                   from = which(rownames(adj)==input.node[ii]), 
-                                   to = which(rownames(adj)==targets[jj]))
-      
-      if(length(sP[[1]]) > 0){
-        
-        sP <- sP[[1]]
-        
-        for(kk in 1:length(sP)){
-          
-          interactors <- sP[[kk]]
-          if(length(interactors)>1){
-            
-            toBind <- matrix(data = , nrow = length(interactors)-1, ncol = 2)
-            for(ll in 1:(length(interactors)-1)){
-              
-              toBind[ll, 1] <- rownames(adj)[interactors[ll]]
-              toBind[ll, 2] <- rownames(adj)[interactors[ll+1]]
-              
-            }
-            
-            ppiRed <- unique(rbind(ppiRed, toBind))
-            
-          }
-          
-        }
-        
-      }
-      
-    }
-    
-  }
-  
-  ppiRed <- ppiRed[-c(1), ]
-  idx2keep <- c()
-  for(ii in 1:nrow(ppiRed)){
-    
-    idx1 <- which(background.network$gene_source==ppiRed[ii, 1])
-    idx2 <- which(background.network$gene_target==ppiRed[ii, 2])
-    
-    idx2keep <- c(idx2keep, intersect(x = idx1, y = idx2))
-    
-  }
-  
-  background.network <- background.network[idx2keep, ]
+  # ppi <- unique(background.network[, c("gene_source", "gene_target" )])
+  # targets <- input.scores$id[which(input.scores$id%in%unique(c(ppi$gene_source, ppi$gene_target)))]
+  # gg <- graph_from_data_frame(d = ppi, directed = TRUE)
+  # adj <- get.adjacency(graph = gg)
+  # ppiRed <- matrix(data = , nrow = 1, ncol = 2)
+  # for(ii in 1:length(input.node)){
+  #   
+  #   for(jj in 1:length(targets)){
+  #     
+  #     sP <- get.all.shortest.paths(graph = gg, 
+  #                                  from = which(rownames(adj)==input.node[ii]), 
+  #                                  to = which(rownames(adj)==targets[jj]))
+  #     
+  #     if(length(sP[[1]]) > 0){
+  #       
+  #       sP <- sP[[1]]
+  #       
+  #       for(kk in 1:length(sP)){
+  #         
+  #         interactors <- sP[[kk]]
+  #         if(length(interactors)>1){
+  #           
+  #           toBind <- matrix(data = , nrow = length(interactors)-1, ncol = 2)
+  #           for(ll in 1:(length(interactors)-1)){
+  #             
+  #             toBind[ll, 1] <- rownames(adj)[interactors[ll]]
+  #             toBind[ll, 2] <- rownames(adj)[interactors[ll+1]]
+  #             
+  #           }
+  #           
+  #           ppiRed <- unique(rbind(ppiRed, toBind))
+  #           
+  #         }
+  #         
+  #       }
+  #       
+  #     }
+  #     
+  #   }
+  #   
+  # }
+  # 
+  # ppiRed <- ppiRed[-c(1), ]
+  # idx2keep <- c()
+  # for(ii in 1:nrow(ppiRed)){
+  #   
+  #   idx1 <- which(background.network$gene_source==ppiRed[ii, 1])
+  #   idx2 <- which(background.network$gene_target==ppiRed[ii, 2])
+  #   
+  #   idx2keep <- c(idx2keep, intersect(x = idx1, y = idx2))
+  #   
+  # }
+  # 
+  # background.network <- background.network[idx2keep, ]
   
   returnList <- list()
   returnList[[length(returnList)+1]] <- background.network
