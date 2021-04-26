@@ -1,3 +1,4 @@
+#!/biosw/R/4.0.5_deb10/bin/Rscript
 
 library(stringr)
 library(edgeR)
@@ -25,17 +26,23 @@ y <- calcNormFactors(y)
 y <- estimateGLMCommonDisp(y, design, verbose=TRUE)
 y <- estimateGLMTagwiseDisp(y, design)
 
+# save DGE object
+saveRDS(y, file="MAGEbaseline_DGEobj.rds")
+
 fit <- glmQLFit(y,design,robust=TRUE)
 
 QlfList<-list();
-QlfList[["DCMvsNormal"]] <- glmQLFTest(fit, coef=2) # DCM vs Normal
-QlfList[["HCMvsNormal"]] <- glmQLFTest(fit, coef=3)  # HCM vs Normal
+QlfList[["DCMvsNFD"]] <- glmQLFTest(fit, coef=2) # DCM vs Normal
+QlfList[["HCMvsNFD"]] <- glmQLFTest(fit, coef=3)  # HCM vs Normal
 QlfList[["DCMvsHCM"]]<- glmQLFTest(fit,contrast=c(0,1,-1,0,0,0,0)) # DCM vs HCM
+
+# save fit
+saveRDS(QlfList, file="MAGEbaseline_DGEfit.rds")
 
 # add annotations
 library(biomaRt)
 mart=useMart(biomart="ENSEMBL_MART_ENSEMBL", dataset="hsapiens_gene_ensembl", host="apr2019.archive.ensembl.org")
-resMArt=getBM(attributes=c("ensembl_gene_id","hgnc_symbol","description"),mart=mart)
+resMArt=getBM(attributes=c("ensembl_gene_id","hgnc_symbol","gene_biotype","description"),mart=mart)
 
 #also use code for diseases..
 #Open Targets database genetic_association_mendelian_somatic_mutation_combined.bed Nov 25 2020
@@ -69,7 +76,7 @@ for(k in names(QlfList))
     DfQlf=merge(DfQlf,Disease,by.x=1,by.y=1,all.x=T)
     
     DfQlf=DfQlf[order(DfQlf$PValue),]
-    DfQlf=DfQlf[DfQlf$FDR<0.05,]
+    # DfQlf=DfQlf[DfQlf$FDR<0.05,] 
 
     DfQlf=merge(DfQlf,rbps,by.x=1,by.y=1,all.x=T)
     DfQlf=merge(DfQlf,tfs,by.x=7,by.y=1,all.x=T)
@@ -80,4 +87,4 @@ for(k in names(QlfList))
 }
 
 # adjust output path
-saveWorkbook(wb, "~/MAGE_DGE_Nov2020.xlsx", overwrite = TRUE)
+saveWorkbook(wb, "/prj/MAGE/analysis/dge/MAGEbaseline_DGE.xlsx", overwrite = TRUE)
