@@ -1,22 +1,30 @@
 # rds
 # path to each sc expressionSet
 scData:
-  Wang: /prj/MAGE/analysis/scdc/data/wang.rds
-  HCA: /prj/MAGE/analysis/scdc/data/hca.rds
-
+  Wang: /prj/MAGE/analysis/deconvolution/scdc/data/wang.rds
+  # downsampled data - 3 sets generated from 3 seeds
+  HCA1: /prj/MAGE/analysis/deconvolution/scdc/data/hca_1.rds
+  HCA2: /prj/MAGE/analysis/deconvolution/scdc/data/hca_2.rds
+  HCA3: /prj/MAGE/analysis/deconvolution/scdc/data/hca_3.rds
+  SCP498_1: /prj/MAGE/analysis/deconvolution/scdc/data/scp498_1.rds
+  SCP498_2: /prj/MAGE/analysis/deconvolution/scdc/data/scp498_2.rds
+  SCP498_3: /prj/MAGE/analysis/deconvolution/scdc/data/scp498_3.rds
+  
 # rds or loom
 # if rds, assume it is an expressionSet, otherwise
 # expressionSet is constructed from loom file
 # if loom, use default loompy column (CellID) and row (Gene) attributes 
 # ** default: filter on GeneFlag and SampleFlag
-bulkData: /prj/MAGE/analysis/data/MAGNet_data.loom
+bulkData: /prj/MAGE/analysis/data/stringtie/MAGNet_data.loom
 
 # output 
-dirOutput: /prj/MAGE/analysis/scdc/results
-#outputName: MAGNetSCDC_qc
-#outputName: MAGNetSCDC_qc_tree
-#outputName: MAGNetSCDC
-outputName: MAGNetSCDC_qc_nosplit
+dirOutput: /prj/MAGE/analysis/deconvolution/scdc/results
+# tree vs ensemble only
+#outputName: MAGNetSCDC_clustQC_split_ensemble # 1
+#outputName: MAGNetSCDC_clustQC_split_tree # 2
+# scdc qc
+#outputName: MAGNetSCDC_clustQC_ensemble # 3
+outputName: MAGNetSCDC_ensemble # 4
 
 # e.g. allow the basis matrix to reflect different gene expression patterns between cases and controls
 split:
@@ -28,7 +36,6 @@ split:
     cond: 
       - DCM 
       - HCM
-      - PPCM
 
 # SCDC processing
 opts:
@@ -39,7 +46,7 @@ opts:
   sampleName: Individual
   
   clustQC:
-    use: TRUE
+    use: FALSE
     threshold: 0.7
   # other options as defaults, see also prop.input
   
@@ -52,13 +59,13 @@ opts:
     use: FALSE
     scdcSubcl: # scdcSubcl reserved name
       CM:
-        - VCM
-        - ACM
+        - Atrial_cardiomyocyte
+        - Ventricular_cardiomyocyte
       NCM:
-        - EC
-        - SMC
-        - FB
-        - IC
+        - Endothelial
+        - Smooth_muscle
+        - Fibroblast
+        - Immune
       
   # default, unless simple is TRUE
   # all other params set to default
