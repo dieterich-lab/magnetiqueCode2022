@@ -1,34 +1,38 @@
-#!/usr/bin/env Rscript 
-
+#!/usr/bin/env Rscript
+# This was heavily modified 
 library(leafcutter)
 library(dplyr)
+setwd('/prj/MAGE/analysis/baltica')
 
+args <- commandArgs(trailingOnly=TRUE)
+cat(args, "\n")
 arguments <- list(
   #counts_file='leafcutter/DCM-vs-CTRL/DCM-vs-CTRL_perind_numers.counts.gz', 
-  counts_file='leafcutter/HCM-vs-CTRL/HCM-vs-CTRL_perind_numers.counts.gz',
+  counts_file=args[1],
   #groups_file='leafcutter/DCM-vs-CTRL/diff_introns.txt', 
-  groups_file='leafcutter/HCM-vs-CTRL/diff_introns.txt', 
-  output_prefix="leafcutter_ds_HCM_confounders",
+  groups_file=args[2], 
+  #output_prefix="leafcutter_HCM_age_discrete/",
+  output_prefix=args[3],
+  #age_datatype="discrete"
+  age_datatype=args[4],
   max_cluster_size=Inf,
   min_samples_per_intron=5, 
   min_samples_per_group=3,
-  min_coverage=30,
+  min_coverage=20,
   timeout=30,
-  num_threads=10,
+  num_threads=30,
   exon_file='leafcutter/exons.gtf.gz',
   init='smart',
   seed=12345)
 
-
 counts_file=arguments$counts_file
 groups_file=arguments$groups_file
-head(groups_file)
 
 cat("Loading counts from",counts_file,"\n")
 if (!file.exists(counts_file)) stop("File ",counts_file," does not exist")
 counts=read.table(counts_file, header=T, check.names = F)
-rownames(counts) <- counts$chrom
-counts$chrom <- NULL
+# rownames(counts) <- counts$chrom
+# counts$chrom <- NULL
   
 cat("Loading metadata from",groups_file,"\n")
 if (!file.exists(groups_file)) stop("File ",groups_file," does not exist")
@@ -48,6 +52,11 @@ stopifnot(length(group_names)==2)
 
 cat("Encoding as",group_names[1],"=0,",group_names[2],"=1\n")
 numeric_x=as.numeric(meta$group)-1
+if(arguments$age_datatype == 'discrete') {
+  cat('Transforming age to factor with 4 bins')
+  meta$age = cut(meta$age, 4)
+}  
+cat(arguments$age_datatype)
 
 confounders=NULL
 if (ncol(meta)>2) {
@@ -60,7 +69,7 @@ if (ncol(meta)>2) {
     confounders=model.matrix( ~., data=confounders )
     confounders=confounders[,2:ncol(confounders),drop=F] # remove intercept
 }
-confounders
+
 minimum_group_size=min(sum(numeric_x==0),sum(numeric_x==1))
 if (minimum_group_size < arguments$min_samples_per_intron)
   stop("The number of samples in the smallest group is less than min_samples_per_intron, which means no clusters are testable. You can reduce min_samples_per_intron using the -i argumentsion, but note that we have only carefully checked the calibration of leafcutter p-values down to n=4 samples per group.")
