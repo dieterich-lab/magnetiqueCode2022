@@ -3,44 +3,53 @@ library(readr)
 library(XML)
 library(igraph)
 
+## Source R functions
+files.sources = paste0("R/", list.files("R/"))
+sapply(files.sources, source)
+
+## Load data
 load(file = "data_test/bg.RData")
-# load(file = "../../DIGGER/DIGGER_Resource/dataInput.RData")
-# rmats1 <- read_excel("~/Desktop/Alternative_Splicing/DIGGER/rmats_results/DCM-vs-CTRL_RI.xlsx")
-# rmats2 <- read_excel("~/Desktop/Alternative_Splicing/DIGGER/rmats_results/DCM-vs-CTRL_A3SS.xlsx")
-# rmats3 <- read_excel("~/Desktop/Alternative_Splicing/DIGGER/rmats_results/DCM-vs-CTRL_A5SS.xlsx")
-# rmats4 <- read_excel("~/Desktop/Alternative_Splicing/DIGGER/rmats_results/DCM-vs-CTRL_MXE.xlsx")
-# rmats4 <- rmats4[, -c(6,7)]
-# rmats5 <- read_excel("~/Desktop/Alternative_Splicing/DIGGER/rmats_results/DCM-vs-CTRL_SE.xlsx")
-# colnames(rmats1) <- colnames(rmats5)
-# colnames(rmats2) <- colnames(rmats5)
-# colnames(rmats3) <- colnames(rmats5)
-# colnames(rmats4) <- colnames(rmats5)
-# asInput <- unique(rbind(rmats1, rmats2, rmats3, rmats4, rmats5))
-# save(asInput, file = "data_test/asInput.RData")
-load(file = "data_test/asInput.RData")
+load(file = "data_test/rmats.RData")
 load(file = "data_test/map.table.RData")
 # load(file = "~/Desktop/MAGE-Project/Data_Exploration_Stringtie/github_scripts/v8/output/tfList50.RData")
 tf_activities_all_DCM_vs_Healthy <- read_delim("data_test/tf_activities_all_DCM_vs_Healthy.csv", 
                                            ";", escape_double = FALSE, trim_ws = TRUE)
 
-
+## Set parameters
 top = 50
-lThresh <- -0.1
+pValThresh <- 0.05
 lambda1 <- 10
-lambda2 <- 0.001
+lambda2 <- 0.1
 input.node <- NULL
 mipgap = 0.05
 relgap = 0.05
-populate = 100
-nSolutions = 20
+populate = 3
+nSolutions = 100
 intensity = 0
 timelimit = 3600
 process_log = FALSE
 replace = 2
-solverPath <- "~/Documents/cplex"
+solverPath <- "/beegfs/homes/egjerga/cplex"
+# solverPath <- "~/Downloads/cplex"
 weightThreshold <- 10
+input.scores = tf_activities_all_DCM_vs_Healthy
+top = 50 
+rmats.input = rmats
+background.network = bg
+map.table = map.table
+input.node = input.node
+constraints3 = "data_test/cc3.RData"
+constraints4 = "data_test/cc4.RData"
+constraints5 = "data_test/cc5.RData"
+constraints6 = "data_test/cc6.RData"
 
-res <- runMethod(input.scores = tf_activities_all_DCM_vs_Healthy, top = 50, 
-                 rmats.input = asInput, background.network = bg, 
-                 map.table = map.table, input.node = input.node)
+## Obtain and slve solutions
+solutionList <- runMethodPar(input.scores = input.scores, rmats.input = rmats.input, 
+                             background.network = background.network, map.table = map.table, 
+                             solverPath = solverPath, input.node = input.node, pValThresh = 0.05, 
+                             top = 50, lambda1 = lambda1, lambda2 = lambda2, 
+                             nSolutions = nSolutions, constraints3 = constraints3, 
+                             constraints4 = constraints4, constraints5 = constraints5, 
+                             constraints6 = constraints6)
 
+save(solutionList, file = "solutionList.RData")
