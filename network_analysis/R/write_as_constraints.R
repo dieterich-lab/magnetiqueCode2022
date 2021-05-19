@@ -1,14 +1,16 @@
 write_as_constraints <- function(background.network = background.network,
                                  variables = variables,
-                                 lThresh = NULL){
+                                 pValThresh = NULL){
   
-  if(is.null(lThresh)){
+  if(is.null(pValThresh)){
     
     return(NULL)
     
   } else {
     
-    idx <- which(background.network$min_score<=lThresh)
+    idx1 <- which(background.network$min_fdr<=pValThresh)
+    idx2 <- which(background.network$min_score<=0)
+    idx <- intersect(x = idx1, y = idx2)
     
     if(length(idx)==0){
       

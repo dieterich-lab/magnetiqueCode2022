@@ -58,9 +58,9 @@ write_objective_function <- function(background.network = background.network,
                                                "=",
                                                background.network$gene_target[idx[ii]]))
     if(currScore > 0){
-      obj[ii] <- paste0(" - ", currScore, " ", variables$var[idx_var])
+      obj[ii] <- paste0(" - ", currScore, " ", variables$var[idx_var[1]])
     } else {
-      obj[ii] <- paste0(" + ", abs(currScore), " ", variables$var[idx_var])
+      obj[ii] <- paste0(" + ", abs(currScore), " ", variables$var[idx_var[1]])
     }
   }
   

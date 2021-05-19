@@ -18,9 +18,14 @@ create_variables <- function(background.network = background.network){
   cc3 <- paste0("xb", cnt:(length(nodes)+cnt))
   cc3Exp <- paste0("node ", nodes)
   
+  #
+  cnt <- 1 + length(cc1) + length(cc2) + length(cc3)
+  cc4 <- paste0("xb", cnt:(length(nodes)+cnt))
+  cc4Exp <- paste0("dist ", nodes)
+  
   variables <- list()
-  variables[[length(variables)+1]] <- c(cc1, cc2, cc3)
-  variables[[length(variables)+1]] <- c(cc1Exp, cc2Exp, cc3Exp)
+  variables[[length(variables)+1]] <- c(cc1, cc2, cc3, cc4)
+  variables[[length(variables)+1]] <- c(cc1Exp, cc2Exp, cc3Exp, cc4Exp)
   names(variables) <- c("var", "var_exp")
   return(variables)
   

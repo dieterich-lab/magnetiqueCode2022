@@ -6,7 +6,7 @@ write_domain_constraints <- function(background.network = background.network){
   c2 <- rep(list(c()), nrow(ppi))
   for(ii in 1:nrow(ppi)){
     
-    ## print(paste0("Progress --- ", ii, "/", nrow(ppi)))
+    print(paste0("Progress --- ", ii, "/", nrow(ppi)))
     
     #
     idx <- intersect(x = which(background.network$gene_source==ppi$gene_source[ii]), 
