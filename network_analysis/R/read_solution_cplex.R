@@ -1,6 +1,8 @@
-read_solution_cplex <- function(cplexSolutionFileName="results1.txt", 
-                                variables = variables, 
-                                background.network = background.network){
+read_solution_cplex <- function(variables = variables, 
+                                background.network = background.network,
+                                condition = 1){
+  
+  cplexSolutionFileName <- paste0("results_", condition, ".txt")
   
   reacVar <- variables$var[which(grepl(pattern = "reaction", 
                                        x = variables$var_exp))]

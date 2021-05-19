@@ -4,16 +4,16 @@ cleanupILP <- function(condition=condition){
     file.remove(paste0("testFile_",condition,".lp"))
   }
   
-  if(file.exists(paste0("results1.txt"))){
-    file.remove(paste0("results1.txt"))
+  if(file.exists(paste0("results_", condition, ".txt"))){
+    file.remove(paste0("results_", condition, ".txt"))
   }
   
   if(file.exists("cplex.log")){
     file.remove("cplex.log")
   }
   
-  if(file.exists(paste0("cplexCommand.txt"))){
-    file.remove(paste0("cplexCommand.txt"))
+  if(file.exists(paste0("cplexCommand_", condition, ".txt"))){
+    file.remove(paste0("cplexCommand_", condition, ".txt"))
   }
   
   AllFiles <- list.files()
