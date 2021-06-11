@@ -1,16 +1,20 @@
-read_solution_cplex <- function(variables = variables, 
+read_solution_cplex <- function(variables = variables,
                                 background.network = background.network,
                                 condition = 1){
   
   cplexSolutionFileName <- paste0("results_", condition, ".txt")
   
-  reacVar <- variables$var[which(grepl(pattern = "reaction", 
+  reacVar <- variables$var[which(grepl(pattern = "reaction",
                                        x = variables$var_exp))]
-  intVar <- variables$var[which(grepl(pattern = "interaction", 
+  intVar <- variables$var[which(grepl(pattern = "interaction",
                                       x = variables$var_exp))]
   
   cplexSolutionData <- xmlParse(cplexSolutionFileName)
+  print("xmlParse Successful")
   cplexSolution <- xmlToList(cplexSolutionData)
+  print("xmlToList Successful")
+  
+  rm(cplexSolutionData)
   
   cplexSolutionIntAll <- list()
   cplexSolutionReacAll <- list()
@@ -18,7 +22,8 @@ read_solution_cplex <- function(variables = variables,
   sifAll1 <- list()
   sifAll2 <- list()
   
-  for(ii in 2:(length(cplexSolution)-1)){
+  # 2:(length(cplexSolution)-1)
+  for(ii in 1:(length(cplexSolution)-1)){
     
     sif1 <- matrix(data = NA, nrow = 1, ncol = 3)
     sif2 <- matrix(data = NA, nrow = 1, ncol = 3)
@@ -28,38 +33,42 @@ read_solution_cplex <- function(variables = variables,
     varvar <- unlist(lapply(currSolution, '[', 1))
     valval <- as.numeric(unlist(lapply(currSolution, '[', 3)))
     
-    idxReac <- intersect(x = which(varvar%in%reacVar), y = which(valval==1))
-    idxInt <- intersect(x = which(varvar%in%intVar), y = which(valval==1))
+    idxReac <- intersect(x = which(varvar%in%reacVar), y = which(valval>=0.99))
+    idxInt <- intersect(x = which(varvar%in%intVar), y = which(valval>=0.99))
     
-    for(jj in 1:length(idxReac)){
+    if(length(idxReac)>0 && length(idxInt)>0){
       
-      currVar <- varvar[idxReac[jj]]
-      currReac <- variables$var_exp[which(variables$var==currVar)]
-      currReac <- strsplit(x = currReac, split = " ", fixed = TRUE)[[1]][2]
+      for(jj in 1:length(idxReac)){
+        
+        currVar <- varvar[idxReac[jj]]
+        currReac <- variables$var_exp[which(variables$var==currVar)]
+        currReac <- strsplit(x = currReac, split = " ", fixed = TRUE)[[1]][2]
+        
+        sif2bind <-
+          as.matrix(c(strsplit(x = currReac, split = "=")[[1]][1],
+                      "1", strsplit(x = currReac, split = "=")[[1]][2]))
+        sif2bind <- t(sif2bind)
+        sif1 <- rbind(sif1, sif2bind)
+        
+      }
+      sifAll1[[length(sifAll1)+1]] <- unique(sif1[-1, ])
       
-      sif2bind <- 
-        as.matrix(c(strsplit(x = currReac, split = "=")[[1]][1], 
-                    "1", strsplit(x = currReac, split = "=")[[1]][2]))
-      sif2bind <- t(sif2bind)
-      sif1 <- rbind(sif1, sif2bind)
+      for(jj in 1:length(idxInt)){
+        
+        currVar <- varvar[idxInt[jj]]
+        currReac <- variables$var_exp[which(variables$var==currVar)]
+        currReac <- strsplit(x = currReac, split = " ", fixed = TRUE)[[1]][2]
+        
+        sif2bind <-
+          as.matrix(c(strsplit(x = currReac, split = "=")[[1]][1],
+                      "1", strsplit(x = currReac, split = "=")[[1]][2]))
+        sif2bind <- t(sif2bind)
+        sif2 <- rbind(sif2, sif2bind)
+        
+      }
+      sifAll2[[length(sifAll2)+1]] <- unique(sif2[-1, ])
       
     }
-    sifAll1[[length(sifAll1)+1]] <- unique(sif1[-1, ])
-    
-    for(jj in 1:length(idxInt)){
-      
-      currVar <- varvar[idxInt[jj]]
-      currReac <- variables$var_exp[which(variables$var==currVar)]
-      currReac <- strsplit(x = currReac, split = " ", fixed = TRUE)[[1]][2]
-      
-      sif2bind <- 
-        as.matrix(c(strsplit(x = currReac, split = "=")[[1]][1], 
-                    "1", strsplit(x = currReac, split = "=")[[1]][2]))
-      sif2bind <- t(sif2bind)
-      sif2 <- rbind(sif2, sif2bind)
-      
-    }
-    sifAll2[[length(sifAll2)+1]] <- unique(sif2[-1, ])
     
   }
   
@@ -176,89 +185,19 @@ read_solution_cplex <- function(variables = variables,
     
     colnames(sif) <- c("source", "weight", "target", "reaction")
     
-    return(sif)
+    # return(sif)
+    returnList <- list()
+    returnList[[length(returnList)+1]] <- sifAll1
+    returnList[[length(returnList)+1]] <- sifAll2
+    returnList[[length(returnList)+1]] <- sif
+    
+    names(returnList) <- c("domain_interactions", "protein_interactions", "combined_interactions")
+    
+    return(returnList)
+  } else {
+    
+    return(NULL)
     
   }
-  
-  # sifAll <- sifAll2
-  # for(ii in 1:length(sifAll)){
-  #   
-  #   if(ii==1){
-  #     
-  #     sif <- sifAll[[1]]
-  #     
-  #   } else {
-  #     
-  #     # sif <- unique(rbind(sif, sifAll[[ii]]))
-  #     if(nrow(sifAll[[ii]]) > 0){
-  #       
-  #       for(jj in 1:nrow(sifAll[[ii]])){
-  #         
-  #         idx1 <- which(sif[, 1]==sifAll[[ii]][jj, 1])
-  #         idx2 <- which(sif[, 3]==sifAll[[ii]][jj, 3])
-  #         
-  #         idx <- intersect(x = idx1, y = idx2)
-  #         
-  #         if(length(idx) > 0){
-  #           
-  #           sif[idx, 2] <- as.character(as.numeric(sif[idx, 2])+1)
-  #           
-  #         } else {
-  #           
-  #           sif <- rbind(sif, sifAll[[ii]][jj, ])
-  #           
-  #         }
-  #         
-  #       }
-  #       
-  #     }
-  #     
-  #   }
-  #   
-  # }
-  # 
-  # sif <- sif[complete.cases(sif), ]
-  # 
-  # 
-  # 
-  # temp <- matrix(data = , nrow = nrow(sif), ncol = 4)
-  # temp[, 1:3] <- sif
-  # 
-  # for(ii in 1:nrow(temp)){
-  #   
-  #   idx1 <- which(background.network$gene_source==temp[ii, 1])
-  #   idx2 <- which(background.network$gene_target==temp[ii, 3])
-  #   
-  #   idx <- intersect(x = idx1, y = idx2)
-  #   
-  #   numVec <- c()
-  #   nn <- rep("", length(idx))
-  #   for(jj in 1:length(idx)){
-  #     
-  #     pfam1 <- background.network$pfam_source[idx[jj]]
-  #     pfam2 <- background.network$pfam_target[idx[jj]]
-  #     
-  #     nn[jj] <- paste0(pfam1, "=", pfam2)
-  #     
-  #     cnt <- 0
-  #     for(kk in 1:length(sifAll1)){
-  #       
-  #       index1 <- which(sifAll1[[kk]][, 1]==pfam1)
-  #       index2 <- which(sifAll1[[kk]][, 1]==pfam2)
-  #       index <- intersect(x = index1, index2)
-  #       if(length(index)>0){
-  #         cnt <- cnt + 1
-  #       }
-  #       
-  #     }
-  #     
-  #     numVec <- c(numVec, cnt)
-  #     
-  #   }
-  #   
-  #   
-  # }
-  # 
-  # return(sif)
   
 }

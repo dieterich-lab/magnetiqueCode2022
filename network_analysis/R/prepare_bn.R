@@ -21,13 +21,13 @@ prepare_bn <- function(background.network = background.network,
       score <- min(rmats$IncLevelDifference[which(rmats$transcript_id==uTranscripts[ii])])
       fdr <- min(rmats$FDR[which(rmats$transcript_id==uTranscripts[ii])])
       
-      idx <- which(background.network$transcript_source==uTranscripts[ii])
+      idx <- which(background.network$exon_source==uTranscripts[ii])
       if(length(idx)>0){
         source_score[idx] <- score
         source_fdr[idx] <- fdr
       }
       
-      idx <- which(background.network$transcript_target==uTranscripts[ii])
+      idx <- which(background.network$exon_target==uTranscripts[ii])
       if(length(idx)>0){
         target_score[idx] <- score
         target_fdr[idx] <- fdr
@@ -65,7 +65,7 @@ prepare_bn <- function(background.network = background.network,
     for(ii in 1:length(top.proteins)){
       
       upfam <- unique(background.network$pfam_source[which(background.network$gene_source==top.proteins[ii])])
-      utrans <- unique(background.network$transcript_source[which(background.network$gene_source==top.proteins[ii])])
+      utrans <- unique(background.network$exon_source[which(background.network$gene_source==top.proteins[ii])])
       uentrez <- unique(background.network$entrez_source[which(background.network$gene_source==top.proteins[ii])])
       
       toBind <- matrix(data = , nrow = length(upfam), ncol = ncol(background.network))

@@ -16,51 +16,104 @@ files.sources = paste0("R/", list.files("R/"))
 sapply(files.sources, source)
 
 ## Load data
-load(file = "data_test/bg.RData")
-load(file = "data_test/rmats.RData")
-load(file = "data_test/map.table.RData")
-# load(file = "~/Desktop/MAGE-Project/Data_Exploration_Stringtie/github_scripts/v8/output/tfList50.RData")
-tf_activities_all_DCM_vs_Healthy <- read_delim("data_test/tf_activities_all_DCM_vs_Healthy.csv", 
+load(file = "data_set/bg.RData")
+load(file = "data_set/map.table.RData")
+
+#
+tfActList <- list()
+
+tf_activities_all_DCM_vs_Healthy <- read_delim("data_set/tf_activities_all_DCM_vs_Healthy.csv", 
                                                ";", escape_double = FALSE, trim_ws = TRUE)
+tfActList[[length(tfActList)+1]] <- tf_activities_all_DCM_vs_Healthy
+tfActList[[length(tfActList)+1]] <- tf_activities_all_DCM_vs_Healthy
+
+tf_activities_all_HCM_vs_Healthy <- read_delim("data_set/tf_activities_all_HCM_vs_Healthy.csv", 
+                                               ";", escape_double = FALSE, trim_ws = TRUE)
+tfActList[[length(tfActList)+1]] <- tf_activities_all_HCM_vs_Healthy
+tfActList[[length(tfActList)+1]] <- tf_activities_all_HCM_vs_Healthy
+
+#
+rmatsList <- list()
+pValThresh <- 0.05
+
+load(file = "data_set/rmats_dcm.RData")
+rmats$FDR <- 1
+rmats$IncLevelDifference <- 0
+rmatsList[[length(rmatsList)+1]] <- rmats
+
+load(file = "data_set/rmats_dcm.RData")
+rmats$IncLevelDifference[which(rmats$FDR>pValThresh)] <- 0
+rmatsList[[length(rmatsList)+1]] <- rmats
+
+load(file = "data_set/rmats_hcm.RData")
+rmats$FDR <- 1
+rmats$IncLevelDifference <- 0
+rmatsList[[length(rmatsList)+1]] <- rmats
+
+load(file = "data_set/rmats_hcm.RData")
+rmats$IncLevelDifference[which(rmats$FDR>pValThresh)] <- 0
+rmatsList[[length(rmatsList)+1]] <- rmats
 
 ## Set parameters
 top = 50
-pValThresh <- 0.05
 lambda1 <- 10
-lambda2 <- 0.1
+lambda2 <- 1
 input.node <- NULL
 mipgap = 0.05
 relgap = 0.05
-populate = 3
-nSolutions = 2
+populate = 1000
+nSolutions = 100
 intensity = 0
-timelimit = 3600
+timelimit = 36000
 process_log = FALSE
-replace = 2
-# solverPath <- "/beegfs/homes/egjerga/cplex"
-solverPath <- "~/Downloads/cplex"
+replace = 1
+solverPath <- "/beegfs/homes/egjerga/cplex"
+# solverPath <- "~/Downloads/cplex"
 weightThreshold <- 10
-input.scores = tf_activities_all_DCM_vs_Healthy
-top = 50 
-rmats.input = rmats
 background.network = bg
 map.table = map.table
-input.node = input.node
-constraints3 = "data_test/cc3.RData"
-constraints4 = "data_test/cc4.RData"
-constraints5 = "data_test/cc5.RData"
-constraints6 = "data_test/cc6.RData"
+
+all_constraints = c("data_set/dcm_constraints/allC_ctrl.RData", 
+                    "data_set/dcm_constraints/allC_as.RData",
+                    "data_set/hcm_constraints/allC_ctrl.RData", 
+                    "data_set/hcm_constraints/allC_as.RData")
+
+background_network_path = c("data_set/dcm_constraints/bg_post_ctrl.RData", 
+                            "data_set/dcm_constraints/bg_post_as.RData",
+                            "data_set/hcm_constraints/bg_post_ctrl.RData",
+                            "data_set/hcm_constraints/bg_post_as.RData")
+
+objective_function_path = c("data_set/dcm_constraints/objective_function_ctrl.RData",
+                            "data_set/dcm_constraints/objective_function_as.RData",
+                            "data_set/hcm_constraints/objective_function_ctrl.RData",
+                            "data_set/hcm_constraints/objective_function_as.RData")
+
 registerDoParallel(cores=4)
 
-## Obtain and solve solutions
-start_time <- Sys.time()
-solutionList <- runMethodPar(input.scores = input.scores, rmats.input = rmats.input, 
-                             background.network = background.network, map.table = map.table, 
-                             solverPath = solverPath, input.node = input.node, pValThresh = 0.05, 
-                             top = 50, lambda1 = lambda1, lambda2 = lambda2, 
-                             nSolutions = nSolutions, constraints3 = constraints3, 
-                             constraints4 = constraints4, constraints5 = constraints5, 
-                             constraints6 = constraints6)
-end_time <- Sys.time()
+## Obtain and solve solutions - 1:4
+res <- foreach(ii = 1:4) %dopar% {
+  
+  runMethod(input.scores = tfActList[[ii]], 
+            rmats.input = rmatsList[[ii]], 
+            background.network = bg, 
+            map.table = map.table, 
+            solverPath = solverPath, 
+            input.node = NULL, 
+            pValThresh = pValThresh, 
+            top = top, 
+            lambda1 = lambda1, 
+            lambda2 = lambda2, 
+            mipgap = mipgap, 
+            relgap = relgap, 
+            populate = populate, 
+            nSolutions = nSolutions, 
+            timelimit = timelimit, 
+            all_constraints = all_constraints[ii], 
+            background_network_path = background_network_path[ii], 
+            objective_function_path = NULL, 
+            condition = ii)
+  
+}
 
-save(solutionList, file = "solutionList.RData")
+save(res, file = "all_solutions_1_2_3_4.RData")
+

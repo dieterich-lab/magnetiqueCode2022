@@ -43,33 +43,66 @@ write_objective_function <- function(background.network = background.network,
     
   }
   
-  # Write second objective - AS scores
-  idx <- which(background.network$min_score!=0)
-  obj <- rep("", length(idx))
-  for(ii in 1:length(idx)){
-    
-    currScore <- background.network$min_score[idx[ii]]
-    idx_var <- which(variables$var_exp==paste0("reaction ", 
-                                               background.network$pfam_source[idx[ii]],
-                                               "=",
-                                               background.network$pfam_target[idx[ii]],
-                                               " of ",
-                                               background.network$gene_source[idx[ii]],
-                                               "=",
-                                               background.network$gene_target[idx[ii]]))
-    if(currScore > 0){
-      obj[ii] <- paste0(" - ", currScore, " ", variables$var[idx_var[1]])
-    } else {
-      obj[ii] <- paste0(" + ", abs(currScore), " ", variables$var[idx_var[1]])
+  # Write second objective - AS scores for source
+  idx <- which(background.network$source_score!=0)
+  if(length(idx)>0){
+    obj <- rep("", length(idx))
+    for(ii in 1:length(idx)){
+      
+      currScore <- background.network$min_score[idx[ii]]
+      idx_var <- which(variables$var_exp==paste0("domain ",
+                                                 background.network$pfam_source[idx[ii]],
+                                                 " of protein ",
+                                                 background.network$gene_source[idx[ii]]))
+      if(currScore > 0){
+        obj[ii] <- paste0(" - ", currScore, " ", variables$var[idx_var[1]])
+      } else {
+        obj[ii] <- paste0(" + ", abs(currScore), " ", variables$var[idx_var[1]])
+      }
+      
     }
+    
+    obj <- paste0(obj, collapse = "")
+    
+    objective.function <- paste0(objective.function, obj)
   }
   
-  obj <- paste0(obj, collapse = "")
-  
-  objective.function <- paste0(objective.function, obj)
+  # Write second objective - AS scores for target
+  idx <- which(background.network$target_score!=0)
+  if(length(idx)>0){
+    obj <- rep("", length(idx))
+    for(ii in 1:length(idx)){
+      
+      currScore <- background.network$min_score[idx[ii]]
+      idx_var <- which(variables$var_exp==paste0("domain ",
+                                                 background.network$pfam_target[idx[ii]],
+                                                 " of protein ",
+                                                 background.network$gene_target[idx[ii]]))
+      if(currScore > 0){
+        obj[ii] <- paste0(" - ", currScore, " ", variables$var[idx_var[1]])
+      } else {
+        obj[ii] <- paste0(" + ", abs(currScore), " ", variables$var[idx_var[1]])
+      }
+      
+    }
+    
+    obj <- paste0(obj, collapse = "")
+    
+    objective.function <- paste0(objective.function, obj)
+  }
   
   # Write third objective - size penalty factor
   idx <- which(grepl(pattern = "reaction", x = variables$var_exp, fixed = TRUE))
+  obj <- paste0(" + ", lambda2, " ", variables$var[idx])
+  obj <- paste0(obj, collapse = "")
+  objective.function <- paste0(objective.function, obj)
+  
+  idx <- which(grepl(pattern = "interaction", x = variables$var_exp, fixed = TRUE))
+  obj <- paste0(" + ", lambda2, " ", variables$var[idx])
+  obj <- paste0(obj, collapse = "")
+  objective.function <- paste0(objective.function, obj)
+  
+  idx <- which(grepl(pattern = "domain", x = variables$var_exp, fixed = TRUE))
   obj <- paste0(" + ", lambda2, " ", variables$var[idx])
   obj <- paste0(obj, collapse = "")
   objective.function <- paste0(objective.function, obj)

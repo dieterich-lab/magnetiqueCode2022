@@ -12,7 +12,7 @@ write_loop_constraints <- function(variables = variables,
   
   cc1 <- paste0(speciesVar, " - ", distVar, " <= 0")
   
-  cc2 <- paste0(distVar, " <= ", 1001)
+  cc2 <- paste0(distVar, " <= ", 100001)
   
   cc3 <- rep("", nrow(sif))
   for(ii in 1:nrow(sif)){
@@ -21,7 +21,7 @@ write_loop_constraints <- function(variables = variables,
     var2 <- variables$var[which(variables$var_exp==paste0("dist ", sif[ii, 1]))]
     var3 <- variables$var[which(variables$var_exp==paste0("interaction ", sif[ii, 1], "=", sif[ii, 2]))]
     
-    cc3[ii] <- paste0(var1, " - ", var2, " + 1001 ", var3, " <= ", -(1-1001))
+    cc3[ii] <- paste0(var1, " - ", var2, " + 100001 ", var3, " <= ", -(1-100001))
     
   }
   
