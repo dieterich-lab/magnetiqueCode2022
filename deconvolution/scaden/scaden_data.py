@@ -20,6 +20,7 @@ import scipy as sp
 logger = logging.getLogger(__name__)
 
 
+
 xstr = lambda s: '' if s is None else str(s)
 
 
@@ -125,7 +126,8 @@ def write_h5ad(ds, layer, sc_data, n_attributes, output_dir,
     
     att = [(sample_str, sample), (library_str, library)]
     loc = get_filename(sc_data, att, None, ext)
-
+    
+    logger.info(f"Writing {loc} with size {adata.shape}")
     adata.write(os.path.join(output_dir, loc))
         
         
@@ -171,17 +173,17 @@ def main():
             if args.split_key_library in ds.ca.keys():
                 libs = np.unique(ds.ca[mask][args.split_key_library]) 
                 for lib in libs:
-                    mask = mask & (ds.ca[args.split_key_library] == lib)
+                    sub_mask = mask & (ds.ca[args.split_key_library] == lib)
                     if args.fmt == 'txt':
                         write_txt(ds, args.layer, args.sc_data, n_cells, args.output_dir, 
                                   args.cluster_key, args.gene_key, 
                                   sample_str='s', sample=sample,
-                                  library_str=None, library=lib, mask=mask)
+                                  library_str=None, library=lib, mask=sub_mask)
                     else:
                         write_h5ad(ds, args.layer, args.sc_data, n_cells, args.output_dir, 
                                    args.cluster_key, args.gene_key, 
                                    sample_str='s', sample=sample,
-                                   library_str=None, library=lib, mask=mask)
+                                   library_str=None, library=lib, mask=sub_mask)
             else:
                 if args.fmt == 'txt':
                     write_txt(ds, args.layer, args.sc_data, n_cells, args.output_dir, 
