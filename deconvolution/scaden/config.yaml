@@ -1,0 +1,33 @@
+
+
+
+folds_file: /prj/MAGE/analysis/deconvolution/scaden/kfold/folds.txt
+
+# created if does not exists
+output_dir: /prj/MAGE/analysis/deconvolution/scaden/kfold/results
+
+fmt: h5ad
+pattern: "*.h5ad"
+
+# generate artificial bulk samples - for test and also for training
+simulate:
+ cells_per_sample: 100
+ n_samples: 1000
+ # cell types to merge into the unknown category - list
+ unknown_cell_type: ['Other']
+ 
+process:
+ var_cutoff: 0.1 # Default: 0.1
+ 
+train:
+ batch_size: 128 # Default: 128
+ learning_rate: 0.0001  # Default: 0.0001
+ steps: 5000 # Number of training steps
+ seed: 1524 # same used for prediction
+  
+# GPUs
+gres:
+ num: 2
+ name: pascal 
+ #num: 2 # up to 4
+ #name: turing
