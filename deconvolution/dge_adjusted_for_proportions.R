@@ -127,7 +127,7 @@ pvalueScatter_ <- function(formula, data, pval.th = 0.05, pval.th.y = pval.th, p
   ggplot(data, aes_string(y = 'y', x = 'x', color = 'Improved')) + geom_point(size = .3) + geom_abline(slope = 1) + 
       scale_color_manual(values = c('TRUE' = '#aa2222', 'FALSE' = 'black'), guide = FALSE) + 
       scale_x_continuous(trans = reverselog_trans(10)) + scale_y_continuous(trans = reverselog_trans(10)) +
-      geom_text(aes_string(label = 'label'), size = 2, hjust = -0.2, vjust = 1.2) + 
+      geom_text(aes_string(label = 'label'), size = 2, hjust = 0.3, vjust = 1.5) + 
       xlab(paste(vars[[2L]], " FDR", sep="")) + ylab(paste(vars[[1L]], " FDR", sep="")) +
       ggtitle(title) +
       theme_classic() +
@@ -313,7 +313,7 @@ plotEffectSize_ <- function(x){
 # standard or baseline model ~Etiology + Race + Age + Sex + DuplicationRate
 form <- as.formula(paste("~ ", paste(names(meta)[c(3:ncol(meta))], collapse="+")))
 design <- model.matrix(form, data=meta)
-fitAll(gene_counts, meta$Etiology, genes, design, basename_standard)
+# fitAll(gene_counts, meta$Etiology, genes, design, basename_standard)
 
 # extended model - with cell type composition
 meta <- cbind(meta, ctr[match(rownames(meta), rownames(ctr)),])
@@ -322,7 +322,7 @@ design <- model.matrix(form, data=meta)
 # we might run into rank issues... so just drop this Unknown cell type
 design <- design[,!colnames(design) %in% 'Unknown']
 
-fitAll(gene_counts, meta$Etiology, genes, design, basename_extended)
+# fitAll(gene_counts, meta$Etiology, genes, design, basename_extended)
 
 # visualize p-values comparison between the 2 models: base model (y-axis) and extended model (x-axis)
 lapply(all_contrasts, function(c) {
@@ -333,7 +333,7 @@ lapply(all_contrasts, function(c) {
     base$hgnc_symbol <- ifelse(is.na(base$hgnc_symbol), base$ensembl_gene_id, base$hgnc_symbol)
     base <- base[order(base$FDR),]
     
-    filen <- file.path(output_dir, paste(basename_standard, ".xlsx", sep=""))
+    filen <- file.path(output_dir, paste(basename_extended, ".xlsx", sep=""))
     adj <- read.xlsx(filen, sheet=c)
     adj$hgnc_symbol[adj$hgnc_symbol==""] <- NA
     adj$hgnc_symbol <- ifelse(is.na(adj$hgnc_symbol), adj$ensembl_gene_id, adj$hgnc_symbol)
@@ -343,7 +343,7 @@ lapply(all_contrasts, function(c) {
                    Base=base$FDR,
                    Adjusted=adj$FDR[match(base$hgnc_symbol, adj$hgnc_symbol)],
                    stringsAsFactors=FALSE)
-    pvals <- mutate(pvals, Regulated=Adjusted <= FDRThreshold & Adjusted <= Base)
+    pvals <- mutate(pvals, Regulated=Adjusted <= FDRThreshold & Adjusted < Base)
     p <- pvalueScatter_(Base ~ Adjusted, pvals, 
                         pval.th=FDRThreshold, 
                         label.th=3.5, 
@@ -351,7 +351,7 @@ lapply(all_contrasts, function(c) {
     filen <- file.path(output_dir, paste(c, "_pvals.csv", sep=""))
     write.csv(pvals, file=filen, row.names=F)
     filen <- file.path(output_dir, paste(c, "_pvals_scatter.png", sep=""))
-    ggsave(p, filen)
+    ggsave(filen, plot=p)
     
 })
 
@@ -379,36 +379,75 @@ cpm <- cpm(counts, normalized.lib.sizes=TRUE, log=FALSE)
 genes <- genes[match(rownames(cpm), genes$ensembl_gene_id),]
 genes$hgnc_symbol[genes$hgnc_symbol==""] <- NA
 genes$hgnc_symbol <- ifelse(is.na(genes$hgnc_symbol), genes$ensembl_gene_id, genes$hgnc_symbol)
-rownames(cpm) <- genes2$hgnc_symbol
+rownames(cpm) <- genes$hgnc_symbol
+
+cpm <- cpm[!is.na(rownames(cpm)),]
+cpm <- cpm[!duplicated(rownames(cpm)),]
+
+# we could have done that above....
+ctr <- ctr[,!colnames(ctr) %in% 'Unknown']
 
 lapply(all_contrasts, function(c) {
     
     # pvals from above
     filen <- file.path(output_dir, paste(c, "_pvals.csv", sep=""))
-    pvals <- read.csv(file)
+    pvals <- read.csv(filen)
     selected_genes <- subset(pvals, Regulated)$hgnc_symbol
     
-    # requires eset
+    # requires eset?
+    # actually, the fitting is not well-documented, and I have a hard time matching what is described
+    # in the paper and the source code...
+    # ... even when passing explicitely the cell type proportions the results do not seem to change?!
     if( !all(rownames(meta)==colnames(cpm)) ){ stop("Mismatch!") }
     eset <- ExpressionSet(assayData=cpm,
                           phenoData=new("AnnotatedDataFrame", data=meta))
     selected <- eset[rownames(eset@assayData$exprs) %in% selected_genes, ]
     selected <- selected[,selected$Etiology %in% unlist(str_split(c, 'vs'))] 
-    csfit <- bseqsc_csdiff(selected ~ Etiology  | Ventricular_cardiomyocyte + Endothelial + Pericyte + Fibroblast + Smooth_muscle + Immune , 
+    #csfit <- bseqsc_csdiff(selected ~ Etiology  | Ventricular_cardiomyocyte + Endothelial + Pericyte + Fibroblast + Smooth_muscle + Immune , 
+    #                       verbose=2, 
+    #                       nperms=5000, 
+    #                       .rng = 12345)
+    
+    csfit <- bseqsc_csdiff(selected ~ Etiology,
+                           data=t(ctr[rownames(ctr) %in% colnames(selected@assayData$exprs),]),
                            verbose=2, 
                            nperms=5000, 
                            .rng = 12345)
+    # or 
+    #csfit2 <- csSAMfit(selected@assayData$exprs,
+    #                   t(ctr[rownames(ctr) %in% colnames(selected@assayData$exprs),]),
+    #                   y=selected@phenoData@data$Etiology,
+    #                   verbose=2, 
+    #                   nperms=5000, 
+    #                   .rng = 12345)
+
     filen <- file.path(output_dir, paste(c, "_csfit.rds", sep=""))
     saveRDS(csfit, file=filen)
-
+    
+    
+    p <- plot_fdr_csfit(csfit, alt = c('great', 'less'), by = 'alt', xlab = 'Number of significant genes', ylab = 'FDR cutoff')
+    p$data$Alternative <- c('greater' = 'Up-regulated', less = 'Down-regulated')[as.character(p$data$Alternative)]
+    p <- p + geom_hline(yintercept=FDRThreshold)
+    filen <- file.path(output_dir, paste(c, "_fdr.png", sep=""))
+    ggsave(filen, plot=p)
+    
     # call csSAM - returns cell type-level statistics (expression, etc.)
     # globally filter for genes with the strongest signal, but omit Unknown cells
-    # n disable any filtering/ordering?
-    # use min = minimum FDR
-    cst <- csTopTable(csfit, threshold=0.05, alt='min', merge=TRUE, n=10, nodups=TRUE)
+    # n disable any filtering/ordering? n maximum number of top features to retain -- in each cell type
+    # **after** ordering according to arguments `sort.by` and `decreasing`. If passing Inf may not work... and different values of
+    # n may lead to more or less results...
+    # Default is to return only the cell types for which a `threshold` value was provided. If `NULL`, as default, then no subsetting is performed.
+    # use min = minimum FDR across alternatives, default is sort.by = 'FDR'
+    # ** default using threshold/subset does not work... 
+    cst <- csTopTable(csfit, alt='min', merge=TRUE, n=50, nodups=TRUE)
+    # but we just filter afterwards anyway...
+    cst <- cst[cst$FDR<0.05,]
+    cst <- cst[order(cst$FDR, cst$se),]
     filen <- file.path(output_dir, paste(c, "_ctstats.csv", sep=""))
     write.csv(cst, file=filen, row.names=F)
+    # but keep only top for plotting
+    cst <- cst %>% group_by(Cell.type) %>% arrange(FDR, se, .by_group = TRUE) %>% slice_head(n=5)
     p <- plotEffectSize_(cst)
     filen <- file.path(output_dir, paste(c, "_effect_size.png", sep=""))
-    ggsave(p, filen)
+    ggsave(filen, plot=p)
 })
