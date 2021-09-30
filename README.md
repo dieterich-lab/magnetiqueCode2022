@@ -1,8 +1,8 @@
 # MAGNet
 
-Source code repository for informatics for life SP1
+Repository for the MAGNet app development and paper. 
+This repository is used for source code related to the different analysis methods, draft manuscript, and project management.
+The web application has its own repository.
 
-See https://redmine.dieterichlab.org/projects/magenet/wiki and related issues
-
-For latest updates, see also email trail Collaboration MAGNet interactive dashboard.
-
+For data sharing, we use the MAGNetApp directory on the Dieterich Lab cloud.
+ 
