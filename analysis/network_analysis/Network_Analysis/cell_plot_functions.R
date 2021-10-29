@@ -1,0 +1,39 @@
+getGenesFromGOandExpression<-function(filename,GOobj,selec)
+{
+  GOres<-read.csv(filename)[,-1];
+  resList<-list();
+  for(k in 1:nrow(GOres))
+  {
+    print(GOres[k,1]);
+    ins<-intersect(names(which(selec==1)),unlist(genesInTerm(GOobj,as.character(GOres[k,1]))));
+    resList[[as.character(GOres[k,1])]]<-ins
+  }
+  return(resList);
+}
+getGenesFromGOandCuff<-function(filename,GOobj,selec)
+{
+  GOres<-read.csv(filename)[,-1];
+  resList<-list();
+  for(k in 1:nrow(GOres))
+  {
+    print(GOres[k,1]);
+    ins<-intersect(names(selec),unlist(genesInTerm(GOobj,as.character(GOres[k,1]))));
+    resList[[as.character(GOres[k,1])]]<-ins
+  }
+  return(resList);
+}
+mergeProteinGroupsToGenes<-function(inp)
+{
+  geneNames<-sapply(sapply(strsplit(gsub("[a-z]","",as.character(rownames(inp))),";"),unique),paste,collapse="/");
+  idx<-which(duplicated(geneNames)==F);
+  inp<-inp[idx,];
+  rownames(inp)<-geneNames[idx];
+  return(inp);
+}
+mergeProteinGroupsToGenesVec<-function(inp)
+{
+  geneNames<-sapply(sapply(strsplit(gsub("[a-z]","",as.character(inp)),";"),unique),paste,collapse="/");
+  idx<-which(duplicated(geneNames)==F);
+  inp<-inp[idx,];
+  return(geneNames[idx]);
+}
