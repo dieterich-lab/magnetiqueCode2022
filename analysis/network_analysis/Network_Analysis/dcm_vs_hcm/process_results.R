@@ -15,7 +15,7 @@ load(file = "../../Data_Analysis/output/tfListAll.RData")
 
 network <- res$weightedSIF
 attributes <- res$nodesAttributes
-TFs <- tfListAll$DCM_vs_HCM$id[which(tfListAll$DCM_vs_HCM$pval<=0.05)]
+TFs <- tfListAll$DCM_vs_HCM$id[which(tfListAll$DCM_vs_HCM$pval<=0.1)]
 
 ctrl <- 1
 while(ctrl!=0){
