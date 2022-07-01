@@ -1,5 +1,17 @@
 #! /usr/bin/env Rscript
 
+# Data needs to be downloaded first
+
+# ```
+# #!/bin/sh
+# wget --output-document data.zip 'https://data.dieterichlab.org/s/3gCTLGT4DaAqaqb/download' --header 'Accept: text/html' --header 'Connection: keep-alive'
+# unzip -o data.zip
+# rm data.zip
+# rm MAGNetApp/magnetique.sqlite MAGNetApp/data/colData.txt
+# rm -r MAGNetApp/data/DGE MAGNetApp/data/DTU MAGNetApp/data/networks MAGNetApp/data/RBP
+# 
+# ```
+
 library(DESeq2)
 library(IHW)
 
@@ -77,45 +89,17 @@ deseq_results <- function (dds, num, denom) {
                                   column="SYMBOL",
                                   keytype="ENSEMBL",
                                   multiVals="first")
-                         
-    # is.de <- as.numeric(res.shrunken$padj < alpha.set & abs(res.shrunken$log2FoldChange) > lfcThreshold.set)
-    # anno <- data.frame(GeneID=rownames(res), SYMBOL=res$SYMBOL)
-    
-    # glMDPlot(res.shrunken, 
-    #          counts=counts(dds ,normalized=TRUE),
-    #          anno, 
-    #          dds$Etiology, 
-    #          samples=colnames(dds), 
-    #          status=is.de, 
-    #          transform = FALSE,
-    #          xlab = "logMeanExpr",
-    #          ylab = "log2FoldChange",
-    #          side.ylab = "NormalizedCount",
-    #          path=dirloc.out, 
-    #          folder=paste("glimma-plots", num, "_vs_", denom, sep=""), 
-    #          launch=FALSE)
-             
-    
-    # add raw counts
-    # cts <- counts(dds, normalized=FALSE) %>%
-    #     data.frame() %>%    
-    #     rownames_to_column(var="gene") %>% 
-    #     as_tibble()
     
     res.tib <- res %>%
         data.frame() %>%
         rownames_to_column(var="gene") %>% 
         as_tibble()
     
-    # res.tib <- res.tib %>% left_join(cts, by="gene")
-    
     res.shrunken.tib <- res.shrunken %>%
         data.frame() %>%
         rownames_to_column(var="gene") %>% 
         as_tibble()
         
-    # res.shrunken.tib <- res.shrunken.tib %>% left_join(cts, by="gene")
-    
     # write to disk, add size factors for reference
     wb <- createWorkbook()
 
@@ -145,9 +129,10 @@ deseq_results <- function (dds, num, denom) {
 ## I/O
 
 # colData, countData
-dirloc.in <- '/prj/MAGE/analysis/genetonic/data'
-dirloc.out <- '/prj/MAGE/analysis/genetonic/results'
-load(file.path(dirloc.in, 'MAGNet.RData'))
+dirloc.in <- '/prj/MAGE/analysis/genetonic/DGE'
+dirloc.out <- '/prj/MAGE/analysis/genetonic/DGE/results'
+
+load(file.path(dirloc.in, 'MAGNetApp', 'data', 'MAGNet.RData'))
 
 stopifnot(all(rownames(colData) == colnames(countData)))
 
@@ -203,18 +188,5 @@ results <- apply(contrasts, 1, function(x) {
 names(results) <- apply(contrasts, 1, paste, collapse="vs")
 
 filen <- file.path(dirloc.out, 'MAGNet_DESeqResults.rds')
-saveRDS(results, file=filen)        
-        
-# any difference among the 3
-# The p-values here are determined solely by the difference in deviance between the ‘full’ and ‘reduced’ model  
-# i.e. fold changes are not directly associated with the actual hypothesis test/should not be used for filtering
-dds <- DESeqDataSetFromMatrix(countData=countData,
-                              colData=colData,
-                              design=~Etiology+Race+Sex+Age+SV1+SV2)
-                              
-ddsLRT <- DESeq(dds, test="LRT", reduced= ~ 1)
-resLRT <- results(ddsLRT)
-                              
-filen <- file.path(dirloc.out, 'MAGNet_DESeqResultsLRT.rds')
-saveRDS(resLRT, file=filen) 
+saveRDS(results, file=filen)
 

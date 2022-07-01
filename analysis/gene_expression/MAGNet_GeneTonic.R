@@ -1,6 +1,6 @@
 #! /usr/bin/env Rscript
 
-# prep results for loading into GeneTonic
+# prep results for loading into the app
 
 library("GeneTonic")
 
@@ -18,7 +18,7 @@ p_value_column <- 'p.value_weight01'
 
 ## I/O
 
-dirloc <- '/prj/MAGE/analysis/genetonic/results'
+dirloc <- '/prj/MAGE/analysis/genetonic/DGE/results'
 
 dds <- readRDS(file.path(dirloc, 'MAGNet_DESeqDataSet.rds'))
 results <- readRDS(file.path(dirloc, 'MAGNet_DESeqResults.rds'))
