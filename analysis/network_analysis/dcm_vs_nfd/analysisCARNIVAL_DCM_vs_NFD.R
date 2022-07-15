@@ -14,7 +14,7 @@ library("tidyverse")
 library("kableExtra")
 library("CARNIVAL")
 
-load(file = "../../Data_Analysis/output/tfListAll.RData")
+load(file = "../../data_analysis/output/tfListAll.RData")
 tf_activities_stat <- tfListAll$DCM_vs_NFD
 topTF <- tf_activities_stat[which(tf_activities_stat$pval<=0.1), ]
 measObj <- matrix(data = , nrow = 1, ncol = nrow(topTF))
@@ -22,7 +22,7 @@ measObj[1, ] <- topTF$nes
 colnames(measObj) <- topTF$id
 measObj <- as.data.frame(measObj)
 
-load(file = "../../Data_Analysis/keep_genes.RData")
+load(file = "../../data_analysis/keep_genes.RData")
 load(file = "../ppi.RData")
 
 idx1 <- which(ppi$source%in%keep_genes)
