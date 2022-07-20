@@ -17,7 +17,7 @@ suppressPackageStartupMessages({
 })
 message("DRIMSeq age_sex_race_sva start")
 
-register(MulticoreParam(workers=30))
+register(MulticoreParam(workers = 30))
 
 message("DRIMSeq load")
 load("mage_dtu_input.RData")
