@@ -1,6 +1,6 @@
 #! /usr/bin/env Rscript
 ## ---------------------------
-## Script name: DTU_mage.R
+## Script name: drimseq_age_sex_race_sva.R
 ## Purpose of script: DTU for MAGE project
 ## Author: Thiago Britto-Borges
 ## Date Created: 2021-04-06
