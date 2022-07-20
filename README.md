@@ -35,10 +35,10 @@ figures_supp.R: Supplementary figures (gene enrichment analyses).
 
 ### dtu
 
-drimseq_age_sex_race_sva.R: does the transcript isoform pre-filtering for DRIMSeq.
+drimseq_age_sex_race_sva.R: does the transcript isoform pre-filtering for DRIMSeq.  
 DRIMSeq_DTU.ipynb: runs DRIMSeq.
 
 ### rev_global_test
 
-01_load_oRNAment.R: loads the RBP:RNA interaction file.
+01_load_oRNAment.R: loads the RBP:RNA interaction file.  
 02_rev_globaltest.R: runs the reverse global test and processes the output.
