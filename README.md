@@ -6,7 +6,7 @@
 ## How to use this repository
 
 This repository contains source codes for the analyses of the MAGNet RNA-seq dataset that are available
-via the [Magnetique application](https://shiny.dieterichlab.org/app/magnetique).
+via the [Magnetique application](https://shiny.dieterichlab.org/app/magnetique) (Source code available [here](https://github.com/AnnekathrinSilvia/magnetique/)).
 
 Read counts, associated data, and the final DB dump can be downloaded from [Zenodo](https://zenodo.org/record/6854308).
 Intermediate results are also available via
