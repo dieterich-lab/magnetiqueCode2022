@@ -40,6 +40,7 @@ library("foreach")
 library("doParallel")
 library("openxlsx")
 library("biomaRt")
+library("OmnipathR")
 
 gene_counts <- read.csv("../Data/gene_count_matrix.csv",row.names="gene_id",as.is=T)
 colnames(gene_counts)<-gsub("_stringtieRef","",colnames(gene_counts))
@@ -359,3 +360,20 @@ writeDataTable(wb, "HCM_vs_NFD", x = tfListAll$HCM_vs_NFD, colNames = TRUE, rowN
 writeDataTable(wb, "DCM_vs_HCM", x = tfListAll$DCM_vs_HCM, colNames = TRUE, rowNames = FALSE)
 
 saveWorkbook(wb, "output/TF_Activity_List.xlsx", overwrite = TRUE)
+
+## Prepare the background network
+interactions <- import_omnipath_interactions()
+interactions <- interactions[which(interactions$is_directed==1), ]
+sums <- interactions$is_stimulation+interactions$is_inhibition
+interactions <- interactions[which(sums==1), ]
+ppi <- matrix(data = "1", nrow = nrow(interactions), ncol = 3)
+ppi[, 1] <- interactions$source_genesymbol
+ppi[, 3] <- interactions$target_genesymbol
+ppi[which(interactions$is_inhibition==1), 2] <- "-1"
+colnames(ppi) <- c("source", "sign", "target")
+ppi <- as.data.frame(ppi)
+
+load(file = "keep_genes.RData")
+ppi <- ppi[intersect(x = which(ppi$source%in%keep_genes), 
+                     y = which(ppi$target%in%keep_genes)), ]
+save(ppi, "output/ppi.RData")
