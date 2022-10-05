@@ -1,6 +1,6 @@
 ## Supplementary resources
 
-> Thiago Britto-Borges, Annekathrin Ludt, Etienne Boileau, Enio Gjerga, Federico Marini, Christoph Dieterich
+> Thiago Britto-Borges, Annekathrin Ludt, Etienne Boileau, Enio Gjerga, Federico Marini, Christoph Dieterich  
 > Magnetique: An interactive web application to explore transcriptome signatures of heart failure
 
 ## How to use this repository
