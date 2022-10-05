@@ -1,1 +1,0 @@
-sbatch -c 40 --mem 512GB -p long --propagate=STACK -J rmats_DCM  --wrap="python ~/rmats-turbo/rmats.py --b1 rmats/DCM.txt  --b2 rmats/CTRL.txt --gtf /beegfs/biodb/genomes/homo_sapiens/GRCh38_96/GRCh38.96.gtf --variable-read-length --readLength 100 --nthread 40 --novelSS --libType fr-secondstrand --allow-clipping --od rmats/DCM-vs-CTRL/ --tmp rmats/tmp/ --task post"

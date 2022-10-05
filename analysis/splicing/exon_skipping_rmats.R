@@ -1,1 +1,0 @@
-/prj/MAGE/analysis/baltica/scripts/exon_skipping_rmats.R

@@ -18,7 +18,7 @@ p_value_column <- 'p.value_weight01'
 
 ## I/O
 
-dirloc <- '/prj/MAGE/analysis/genetonic/DGE/results'
+dirloc <- 'magnetiqueCode2022'
 
 dds <- readRDS(file.path(dirloc, 'MAGNet_DESeqDataSet.rds'))
 results <- readRDS(file.path(dirloc, 'MAGNet_DESeqResults.rds'))

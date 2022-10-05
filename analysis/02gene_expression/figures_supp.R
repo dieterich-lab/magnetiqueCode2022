@@ -26,7 +26,7 @@ ontology <- 'CC'
 
 ## I/O
 
-dirloc <- '/prj/MAGE/analysis/genetonic/DGE/results'
+dirloc <- 'magnetiqueCode2022'
 results <- readRDS(file.path(dirloc, 'MAGNet_DESeqResults.rds'))
 
 .x <- results[[contrast]]

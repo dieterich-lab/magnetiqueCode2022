@@ -12,6 +12,8 @@
 # 
 # ```
 
+# or use the newly generate data, e.g. in magnetiqueCode2022/analysis/data/
+
 library(DESeq2)
 library(IHW)
 
@@ -129,8 +131,8 @@ deseq_results <- function (dds, num, denom) {
 ## I/O
 
 # colData, countData
-dirloc.in <- '/prj/MAGE/analysis/genetonic/DGE'
-dirloc.out <- '/prj/MAGE/analysis/genetonic/DGE/results'
+dirloc.in <- 'magnetiqueCode2022'
+dirloc.out <- 'magnetiqueCode2022'
 
 load(file.path(dirloc.in, 'MAGNetApp', 'data', 'MAGNet.RData'))
 
