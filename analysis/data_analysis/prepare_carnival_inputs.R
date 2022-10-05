@@ -373,7 +373,4 @@ ppi[which(interactions$is_inhibition==1), 2] <- "-1"
 colnames(ppi) <- c("source", "sign", "target")
 ppi <- as.data.frame(ppi)
 
-load(file = "keep_genes.RData")
-ppi <- ppi[intersect(x = which(ppi$source%in%keep_genes), 
-                     y = which(ppi$target%in%keep_genes)), ]
 save(ppi, "output/ppi.RData")
