@@ -17,4 +17,4 @@ unzip -o data.zip
 rm data.zip
 ```
 
-The different analysis scripts are available under [analysis](analysis/README.md).
+The different analysis scripts are available under [analysis](https://github.com/dieterich-lab/magnetiqueCode2022/tree/main/analysis).
